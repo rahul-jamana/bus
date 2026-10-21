@@ -1,0 +1,11 @@
+node_modules/
+*.log
+.env
+.DS_Store
+db/*.db
+uploads/faces/*
+!uploads/faces/.gitkeep
+uploads/gate_logs/*
+!uploads/gate_logs/.gitkeep
+.firebase/
+

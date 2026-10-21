@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolSafe — Real-Time School Bus Tracking & Child Safety Platform</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+  <style>
+    :root {
+      --primary-blue: #0284c7;
+      --primary-dark: #0369a1;
+      --navy: #0f172a;
+      --bg-sky: #f0f9ff;
+      --border-blue: #bae6fd;
+    }
+
+    body {
+      background-color: var(--bg-sky);
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      padding: 60px 20px 80px;
+      border-radius: 0 0 40px 40px;
+      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.25);
+    }
+
+    .portal-card {
+      background: #ffffff;
+      border: 1px solid var(--border-blue);
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(2, 132, 199, 0.08);
+      transition: all 0.25s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+      padding: 30px 24px;
+    }
+
+    .portal-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 35px rgba(2, 132, 199, 0.18);
+      border-color: #38bdf8;
+      color: inherit;
+    }
+
+    .icon-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .btn-launch {
+      border-radius: 12px;
+      font-weight: 600;
+      padding: 10px 18px;
+      transition: all 0.2s;
+    }
+
+    .feature-pill {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO SECTION -->
+  <div class="hero-banner text-center">
+    <div class="container" style="max-width: 860px;">
+      <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold mb-3 shadow-sm">
+        <i class="fa-solid fa-shield-halved me-1 text-primary"></i> Zero Extra Hardware Required
+      </span>
+      <h1 class="display-4 fw-bold brand-font mb-3">SchoolSafe Transportation</h1>
+      <p class="fs-5 opacity-90 mb-4 fw-light">
+        Real-Time School Bus GPS Tracking, Child Door AI Face Recognition, and Instant Photo Proof of Boarding & Safe Drop-Off for Parents.
+      </p>
+
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <span class="feature-pill"><i class="fa-solid fa-mobile-screen"></i> Driver Mobile GPS</span>
+        <span class="feature-pill"><i class="fa-solid fa-camera"></i> Face AI Boarding</span>
+        <span class="feature-pill"><i class="fa-solid fa-image"></i> Live Photo Proof</span>
+        <span class="feature-pill"><i class="fa-solid fa-bell"></i> Instant SMS Alerts</span>
+        <span class="feature-pill"><i class="fa-solid fa-fire"></i> Firebase Cloud</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTALS GRID -->
+  <div class="container" style="margin-top: -40px; max-width: 1100px;">
+    <div class="row g-4">
+
+      <!-- PORTAL 1: ADMIN -->
+      <div class="col-md-6 col-lg-3">
+        <a href="/admin" class="portal-card">
+          <div>
+            <div class="icon-badge bg-primary-subtle text-primary">
+              <i class="fa-solid fa-user-shield fa-2x"></i>
+            </div>
+            <h5 class="fw-bold brand-font text-primary mb-2">Transport Admin</h5>
+            <p class="text-muted small mb-4">
+              Register students with parent contact info, capture 128D AI face data via webcam, assign bus routes, and monitor fleet GPS.
+            </p>
+          </div>
+          <div>
+            <div class="small text-muted mb-2"><i class="fa-solid fa-key me-1"></i>ID/Pass: <strong>9040954015</strong></div>
+            <span class="btn btn-primary w-100 btn-launch">
+              Open Admin <i class="fa-solid fa-arrow-right ms-1"></i>
+            </span>
+          </div>
+        </a>
+      </div>
+
+      <!-- PORTAL 2: DRIVER -->
+      <div class="col-md-6 col-lg-3">
+        <a href="/driver" class="portal-card">
+          <div>
+            <div class="icon-badge bg-success-subtle text-success">
+              <i class="fa-solid fa-mobile-screen-button fa-2x"></i>
+            </div>
+            <h5 class="fw-bold brand-font text-success mb-2">Driver Console</h5>
+            <p class="text-muted small mb-4">
+              Driver opens this on their smartphone mounted on the bus. One-tap GPS sharing broadcasts high-accuracy coordinates to parents.
+            </p>
+          </div>
+          <div>
+            <div class="small text-muted mb-2"><i class="fa-solid fa-satellite-dish me-1"></i>No Hardware Needed</div>
+            <span class="btn btn-success w-100 btn-launch">
+              Open Driver GPS <i class="fa-solid fa-arrow-right ms-1"></i>
+            </span>
+          </div>
+        </a>
+      </div>
+
+      <!-- PORTAL 3: BUS DOOR SCANNER -->
+      <div class="col-md-6 col-lg-3">
+        <a href="/bus-terminal.html" class="portal-card">
+          <div>
+            <div class="icon-badge text-white" style="background: linear-gradient(135deg, #0284c7, #0284c7);">
+              <i class="fa-solid fa-camera fa-2x"></i>
+            </div>
+            <h5 class="fw-bold brand-font text-primary mb-2">Door AI Camera</h5>
+            <p class="text-muted small mb-4">
+              Mounted at bus entrance. Scans each child's face on entry and exit, captures photo snapshot, and sends alerts to parents.
+            </p>
+          </div>
+          <div>
+            <div class="small text-muted mb-2"><i class="fa-solid fa-brain me-1"></i>VisioFace AI Active</div>
+            <span class="btn btn-outline-primary w-100 btn-launch">
+              Open Scanner <i class="fa-solid fa-arrow-right ms-1"></i>
+            </span>
+          </div>
+        </a>
+      </div>
+
+      <!-- PORTAL 4: PARENT -->
+      <div class="col-md-6 col-lg-3">
+        <a href="/parent" class="portal-card">
+          <div>
+            <div class="icon-badge bg-danger-subtle text-danger">
+              <i class="fa-solid fa-heart fa-2x"></i>
+            </div>
+            <h5 class="fw-bold brand-font text-danger mb-2">Parent Portal</h5>
+            <p class="text-muted small mb-4">
+              Parents track their child's bus in real time with an ETA countdown, and view timestamped photo proof of boarding and drop-off.
+            </p>
+          </div>
+          <div>
+            <div class="small text-muted mb-2"><i class="fa-solid fa-map-location-dot me-1"></i>Live Bus Map & ETA</div>
+            <span class="btn btn-danger w-100 btn-launch">
+              Open Parent View <i class="fa-solid fa-arrow-right ms-1"></i>
+            </span>
+          </div>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- HOW IT SOLVES THE PROBLEM -->
+    <div class="card p-4 border-0 shadow-sm rounded-4 mt-5 bg-white">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h5 class="fw-bold brand-font text-primary mb-2">
+            <i class="fa-solid fa-circle-question me-2"></i>How It Solves School Transportation Safety
+          </h5>
+          <p class="text-muted small mb-0">
+            Eliminates repeated phone calls to drivers while on the road. Provides parents complete transparency with real-time GPS coordinates from the driver's phone and biometric photo verification proof when their child enters or leaves the bus.
+          </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 px-3 rounded-pill fw-bold">
+            <i class="fa-solid fa-circle-check me-1"></i> Standalone & Lightweight
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-4 text-muted small mt-4">
+    SchoolSafe Transport Platform • Connected to Firebase (<code>buss-b1d0f</code>)
+  </footer>
+
+</body>
+</html>

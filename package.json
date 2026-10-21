@@ -1,0 +1,36 @@
+{
+  "name": "face-detection-attendance-system",
+  "version": "2.5.0",
+  "description": "VisioFace AI — 7+ Multi-Face Scanner, BEC Transport Fleet & Anti-Bypass Attendance System",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "deploy": "npx -y firebase-tools@latest deploy --project face-b4486"
+  },
+  "keywords": [
+    "face-detection",
+    "attendance-system",
+    "computer-vision",
+    "express",
+    "sqlite"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^14.2.0",
+    "firebase-functions": "^7.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.2.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.24.5",
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Parent Portal — SchoolSafe Live Bus & Child Tracking</title>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #0284c7;
+      --navy: #0f172a;
+      --bg: #f0f9ff;
+      --card-bg: #ffffff;
+      --border: #bae6fd;
+      --green: #10b981;
+    }
+
+    body {
+      background-color: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      padding-bottom: 40px;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .parent-header {
+      background: #ffffff;
+      border-bottom: 2px solid var(--border);
+      padding: 16px 20px;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+    }
+
+    .card-custom {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.06);
+    }
+
+    #parent-map {
+      height: 360px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      z-index: 1;
+    }
+
+    .status-pill-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .status-pill-step.active {
+      color: var(--primary-blue);
+    }
+
+    .status-pill-step.completed {
+      color: var(--green);
+    }
+
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .status-pill-step.completed .step-circle {
+      background: #dcfce7;
+      color: var(--green);
+    }
+
+    .status-pill-step.active .step-circle {
+      background: #e0f2fe;
+      color: var(--primary-blue);
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
+    }
+
+    .eta-banner {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      border-radius: 14px;
+      padding: 14px 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <div class="parent-header d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <div class="bg-primary text-white p-2 rounded-3 me-2">
+        <i class="fa-solid fa-heart fa-lg"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold brand-font text-primary mb-0">Parent Safety Portal</h5>
+        <span class="text-muted small" style="font-size: 0.75rem;">Live School Bus GPS & Photo Proof of Boarding</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Admin</a>
+      <a href="/driver" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold">Driver</a>
+    </div>
+  </div>
+
+  <div class="container px-3">
+
+    <!-- STUDENT SEARCH / SELECTION BAR -->
+    <div class="card card-custom p-3 mb-4">
+      <label class="form-label small fw-bold text-secondary text-uppercase">Track Your Child</label>
+      <div class="input-group">
+        <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" id="parent-search-query" class="form-control" placeholder="Enter Child Roll No or Parent Phone (e.g. BEC26081)" value="BEC26081">
+        <button class="btn btn-primary" onclick="trackStudent()">
+          <i class="fa-solid fa-location-arrow me-1"></i> Track Bus
+        </button>
+      </div>
+      <div class="d-flex gap-2 mt-2">
+        <span class="small text-muted">Quick Demo:</span>
+        <a href="javascript:void(0)" class="small text-primary fw-semibold" onclick="quickSelect('BEC26081')">Munu Nial (BEC26081)</a>
+        <span class="text-muted">•</span>
+        <a href="javascript:void(0)" class="small text-primary fw-semibold" onclick="quickSelect('101')">Rahul Kumar (101)</a>
+      </div>
+    </div>
+
+    <!-- MAIN TRACKING ROW -->
+    <div class="row g-4">
+
+      <!-- LEFT: TODAY'S CHILD SAFETY & PHOTO PROOF CARD -->
+      <div class="col-lg-5">
+        <div class="card card-custom p-4 text-center mb-3">
+          <div class="position-relative d-inline-block mx-auto mb-3">
+            <img id="child-photo" src="https://placehold.co/120x120/e0f2fe/0369a1?text=Photo" class="rounded-circle border border-primary border-3 shadow" style="width: 100px; height: 100px; object-fit: cover;">
+            <span class="position-absolute bottom-0 end-0 bg-success text-white p-1 rounded-circle border border-white" style="width: 24px; height: 24px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-check"></i>
+            </span>
+          </div>
+
+          <h4 class="fw-bold brand-font text-primary mb-1" id="child-name">Munu Nial</h4>
+          <span class="text-muted small d-block mb-3" id="child-meta">Roll: BEC26081 • Computer Science</span>
+
+          <!-- LIVE BOARDING PHOTO CAPTURED BY BUS DOOR CAMERA -->
+          <div class="p-3 bg-light rounded-3 border mb-3 text-start">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold small text-primary"><i class="fa-solid fa-camera me-1"></i>Door Verification Snapshot</span>
+              <span class="badge bg-success" id="badge-boarded-status">Boarded 07:45 AM</span>
+            </div>
+            <div class="text-center my-2">
+              <img id="boarding-snapshot-proof" src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60" class="img-fluid rounded-3 border shadow-sm" style="max-height: 160px; object-fit: cover; width: 100%;">
+            </div>
+            <span class="text-muted small d-block" style="font-size: 0.75rem;">
+              <i class="fa-solid fa-location-dot text-danger me-1"></i>Boarded at: <strong id="boarding-stop-label">Pitapalli Square</strong>
+            </span>
+          </div>
+
+          <!-- TRIP PROGRESS TIMELINE -->
+          <div class="card p-3 border-0 bg-light rounded-3 text-start">
+            <span class="fw-bold small text-secondary text-uppercase mb-2 d-block">Trip Journey Progress</span>
+            <div class="d-flex flex-column gap-2">
+              <div class="status-pill-step completed">
+                <div class="step-circle"><i class="fa-solid fa-check"></i></div>
+                <div>
+                  <div>Boarded School Bus</div>
+                  <span class="text-muted" style="font-size: 0.75rem;" id="time-boarded-step">07:45 AM • Pitapalli Square</span>
+                </div>
+              </div>
+
+              <div class="status-pill-step active">
+                <div class="step-circle"><i class="fa-solid fa-bus"></i></div>
+                <div>
+                  <div class="fw-bold text-primary">On the Way (Live GPS Tracking)</div>
+                  <span class="text-muted" style="font-size: 0.75rem;" id="speed-step-label">Speed: 38 km/h • High Precision</span>
+                </div>
+              </div>
+
+              <div class="status-pill-step">
+                <div class="step-circle"><i class="fa-solid fa-school"></i></div>
+                <div>
+                  <div>School Arrival</div>
+                  <span class="text-muted" style="font-size: 0.75rem;">Scheduled: 09:00 AM • Main Gate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DRIVER CONTACT CARD -->
+        <div class="card card-custom p-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <div class="bg-primary-subtle text-primary p-3 rounded-circle me-3">
+                <i class="fa-solid fa-user-tie fa-lg"></i>
+              </div>
+              <div>
+                <strong class="d-block text-dark" id="driver-name-card">Ramesh Kumar</strong>
+                <span class="text-muted small">Driver • Bus #4 (Khordha)</span>
+              </div>
+            </div>
+            <a href="tel:+919876500004" id="driver-phone-link" class="btn btn-primary btn-sm rounded-pill px-3">
+              <i class="fa-solid fa-phone me-1"></i> Call
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: LIVE INTERACTIVE BUS MAP & NOTIFICATIONS FEED -->
+      <div class="col-lg-7">
+        <!-- Live Map -->
+        <div class="card card-custom p-3 mb-3">
+          <!-- Dynamic ETA Banner -->
+          <div class="eta-banner d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span class="small opacity-75 d-block text-uppercase fw-semibold">Estimated Arrival to School</span>
+              <h4 class="fw-bold brand-font mb-0" id="live-eta-countdown">~6 mins away (1.4 km)</h4>
+            </div>
+            <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold">
+              <i class="fa-solid fa-satellite-dish me-1"></i> Live Stream
+            </span>
+          </div>
+
+          <div id="parent-map"></div>
+
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top small text-muted">
+            <span><i class="fa-solid fa-bus text-primary me-1"></i> <strong id="bus-num-label">Bus #4</strong> — Khordha Route</span>
+            <span><i class="fa-solid fa-gauge text-success me-1"></i> Current Speed: <strong id="bus-speed-label">38 km/h</strong></span>
+          </div>
+        </div>
+
+        <!-- SMS / APP NOTIFICATION AUDIT FEED -->
+        <div class="card card-custom p-4">
+          <h6 class="fw-bold brand-font text-primary mb-3">
+            <i class="fa-solid fa-comment-sms me-2"></i>Official SMS Dispatches Received
+          </h6>
+
+          <div id="parent-sms-feed" class="d-flex flex-column gap-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let pMap = null;
+    let busMarker = null;
+    let currentBusId = 1;
+    let pollInterval = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      initParentMap();
+      await trackStudent();
+      pollInterval = setInterval(updateBusLocation, 3000);
+    });
+
+    function initParentMap() {
+      if (pMap) return;
+      pMap = L.map('parent-map').setView([20.2961, 85.8245], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(pMap);
+    }
+
+    function quickSelect(q) {
+      document.getElementById('parent-search-query').value = q;
+      trackStudent();
+    }
+
+    async function trackStudent() {
+      const q = document.getElementById('parent-search-query').value.trim();
+      if (!q) return;
+
+      try {
+        const res = await fetch(`/api/bus/parent-track/${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (data.success) {
+          renderStudentInfo(data.student, data.bus, data.latest_log, data.notifications);
+          if (data.bus) {
+            currentBusId = data.bus.id;
+            updateMapPosition(data.bus);
+          }
+        } else {
+          alert('No student found matching query: ' + q);
+        }
+      } catch (err) {
+        console.error('Tracking error:', err);
+      }
+    }
+
+    function renderStudentInfo(student, bus, latestLog, notifications) {
+      document.getElementById('child-name').innerText = student.name;
+      document.getElementById('child-meta').innerText = `Roll: ${student.roll_number} • ${student.branch || 'Class 6'}`;
+
+      if (student.photo_path) {
+        const p = student.photo_path.startsWith('/') ? student.photo_path : `/${student.photo_path}`;
+        document.getElementById('child-photo').src = p;
+      }
+
+      if (bus) {
+        document.getElementById('driver-name-card').innerText = bus.driver_name || 'Ramesh Kumar';
+        document.getElementById('driver-phone-link').href = `tel:${bus.driver_phone || '+919876500004'}`;
+        document.getElementById('bus-num-label').innerText = bus.bus_number;
+        document.getElementById('bus-speed-label').innerText = `${Math.round(bus.speed || 0)} km/h`;
+      }
+
+      if (latestLog) {
+        document.getElementById('badge-boarded-status').innerText = `Boarded ${latestLog.log_time ? new Date(latestLog.log_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '07:45 AM'}`;
+        if (latestLog.photo_url) {
+          document.getElementById('boarding-snapshot-proof').src = latestLog.photo_url;
+        }
+      }
+
+      // Render SMS feed
+      const feed = document.getElementById('parent-sms-feed');
+      if (!notifications || notifications.length === 0) {
+        feed.innerHTML = `
+          <div class="p-3 bg-light rounded-3 border-start border-primary border-4 small">
+            <strong class="d-block text-primary"><i class="fa-solid fa-bus me-1"></i>BEC Transport Notification</strong>
+            <span>Your ward ${student.name} boarded Bus #4 at 7:45 AM.<br><small class="text-muted">Route: Khordha • - BEC Transport</small></span>
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = notifications.map(n => `
+        <div class="p-3 bg-light rounded-3 border-start border-primary border-4 small">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong class="text-primary"><i class="fa-solid fa-bell me-1"></i>${n.subject || 'School Bus Alert'}</strong>
+            <span class="text-muted" style="font-size: 0.75rem;">${n.time || ''}</span>
+          </div>
+          <p class="mb-0 text-secondary">${n.message}</p>
+        </div>
+      `).join('');
+    }
+
+    function updateMapPosition(bus) {
+      if (!pMap) return;
+      const lat = bus.current_lat || 20.2961;
+      const lng = bus.current_lng || 85.8245;
+
+      if (busMarker) {
+        busMarker.setLatLng([lat, lng]);
+      } else {
+        const icon = L.divIcon({
+          html: `<div style="background: #0284c7; color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); border: 3px solid white;"><i class="fa-solid fa-bus"></i></div>`,
+          className: '',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        });
+        busMarker = L.marker([lat, lng], { icon }).addTo(pMap);
+        busMarker.bindPopup(`<b>${bus.bus_number}</b><br>Speed: ${bus.speed || 0} km/h`).openPopup();
+      }
+
+      pMap.panTo([lat, lng]);
+    }
+
+    async function updateBusLocation() {
+      if (!currentBusId) return;
+      try {
+        const res = await fetch(`/api/bus/telemetry/${currentBusId}`);
+        const data = await res.json();
+        if (data.success && data.bus) {
+          updateMapPosition(data.bus);
+          document.getElementById('bus-speed-label').innerText = `${Math.round(data.bus.speed || 0)} km/h`;
+          document.getElementById('speed-step-label').innerText = `Speed: ${Math.round(data.bus.speed || 0)} km/h • High Precision GPS`;
+        }
+      } catch (e) {}
+    }
+  </script>
+</body>
+</html>

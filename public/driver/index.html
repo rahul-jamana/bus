@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Driver Mobile GPS Console — SchoolSafe</title>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+  <style>
+    :root {
+      --primary-blue: #0284c7;
+      --navy: #0f172a;
+      --bg: #f0f9ff;
+      --card-bg: #ffffff;
+      --border: #bae6fd;
+      --green: #10b981;
+    }
+
+    body {
+      background-color: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      padding-bottom: 40px;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .driver-header {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      border-radius: 0 0 24px 24px;
+      padding: 24px 20px;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
+    }
+
+    .card-custom {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.06);
+    }
+
+    .gps-pulse-active {
+      width: 14px;
+      height: 14px;
+      background-color: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .btn-gps-start {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      font-weight: 700;
+      border-radius: 16px;
+      padding: 16px;
+      border: none;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+      font-size: 1.15rem;
+      transition: all 0.2s;
+    }
+
+    .btn-gps-stop {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      font-weight: 700;
+      border-radius: 16px;
+      padding: 16px;
+      border: none;
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+      font-size: 1.15rem;
+    }
+
+    .speed-gauge {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #0284c7;
+      line-height: 1;
+    }
+
+    .student-item {
+      border-left: 4px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .student-item.boarded {
+      border-left-color: var(--green);
+      background-color: #f0fdf4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MOBILE HEADER -->
+  <div class="driver-header text-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold">
+        <i class="fa-solid fa-satellite-dish me-1"></i> Mobile GPS Transmitter
+      </span>
+      <a href="/admin" class="btn btn-sm btn-light text-primary rounded-pill fw-bold">Admin</a>
+    </div>
+    <h3 class="fw-bold brand-font mb-1">Driver Console</h3>
+    <p class="small mb-0 opacity-75">Streams your phone's real-time GPS location directly to parents</p>
+  </div>
+
+  <div class="container px-3">
+
+    <!-- BUS SELECTION CARD -->
+    <div class="card card-custom p-3 mb-3">
+      <label class="form-label small fw-bold text-secondary text-uppercase">Assigned School Bus</label>
+      <div class="input-group mb-2">
+        <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-bus"></i></span>
+        <select id="bus-select" class="form-select fw-bold text-primary" onchange="onBusChanged()">
+          <option value="1" selected>Bus #4 — Khordha Route (Driver: Ramesh Kumar)</option>
+          <option value="2">Bus #1 — Bhubaneswar Route (Driver: Suresh Mohanty)</option>
+          <option value="3">Bus #2 — Cuttack Route (Driver: Bikash Rout)</option>
+        </select>
+      </div>
+      <div class="d-flex justify-content-between align-items-center small text-muted">
+        <span>Driver Phone: <strong id="driver-phone-display">+91 9876500004</strong></span>
+        <span>Route: <strong id="driver-route-display">Khordha Bypass</strong></span>
+      </div>
+    </div>
+
+    <!-- GPS STATUS & SPEEDOMETER CARD -->
+    <div class="card card-custom p-4 text-center mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+          <span class="gps-pulse-active me-2" id="gps-pulse" style="display: none;"></span>
+          <span class="fw-bold small" id="gps-status-text">GPS Idle (Ready to Start)</span>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1" id="ping-count">
+          0 Pings Sent
+        </span>
+      </div>
+
+      <div class="my-2">
+        <div class="speed-gauge" id="speed-display">0</div>
+        <span class="text-muted fw-semibold small text-uppercase">Kilometers Per Hour (km/h)</span>
+      </div>
+
+      <div class="row g-2 mt-3 pt-3 border-top">
+        <div class="col-4 border-end">
+          <span class="text-muted small d-block">Latitude</span>
+          <strong class="font-monospace small text-dark" id="lat-display">20.2961</strong>
+        </div>
+        <div class="col-4 border-end">
+          <span class="text-muted small d-block">Longitude</span>
+          <strong class="font-monospace small text-dark" id="lng-display">85.8245</strong>
+        </div>
+        <div class="col-4">
+          <span class="text-muted small d-block">Accuracy</span>
+          <strong class="font-monospace small text-success" id="acc-display">±5m</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN START / STOP GPS TOGGLE BUTTON -->
+    <div class="mb-4">
+      <button id="btn-toggle-gps" class="btn btn-gps-start w-100" onclick="toggleGpsTracking()">
+        <i class="fa-solid fa-location-crosshairs me-2"></i>Start Live GPS Sharing
+      </button>
+      <div class="text-center mt-2 small text-muted">
+        <i class="fa-solid fa-shield-heart text-primary me-1"></i>
+        Keep this screen open while driving so parents can track you in real-time.
+      </div>
+    </div>
+
+    <!-- PASSENGERS ROSTER & BOARDING CHECKLIST -->
+    <div class="card card-custom p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h6 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-clipboard-user me-2"></i>Students on this Route</h6>
+          <span class="text-muted" style="font-size: 0.75rem;">Auto-checks when child enters door face camera</span>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success" id="boarded-counter">0 / 0 Boarded</span>
+      </div>
+
+      <div id="student-roster-list" class="d-flex flex-column gap-2">
+        <div class="text-center py-3 text-muted small">Loading passengers...</div>
+      </div>
+    </div>
+
+    <!-- QUICK LINKS TO OTHER PORTALS -->
+    <div class="d-flex gap-2">
+      <a href="/bus-terminal" class="btn btn-outline-primary btn-sm flex-fill rounded-pill py-2">
+        <i class="fa-solid fa-camera me-1"></i> Open Door Scanner
+      </a>
+      <a href="/parent" class="btn btn-outline-secondary btn-sm flex-fill rounded-pill py-2">
+        <i class="fa-solid fa-heart me-1"></i> Parent View
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    let isTracking = false;
+    let watchId = null;
+    let pingCounter = 0;
+    let currentBusId = 1;
+    let passengers = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadBusDetails();
+      await loadPassengers();
+      setInterval(pollBoardingStatus, 4000);
+    });
+
+    async function loadBusDetails() {
+      try {
+        const res = await fetch(`/api/bus/telemetry/${currentBusId}`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('driver-phone-display').innerText = data.bus.driver_phone || '+91 9876500004';
+          document.getElementById('driver-route-display').innerText = data.bus.route_name || 'Khordha Route';
+        }
+      } catch (e) {}
+    }
+
+    async function loadPassengers() {
+      try {
+        const res = await fetch(`/api/bus/students/${currentBusId}`);
+        const data = await res.json();
+        if (data.success) {
+          passengers = data.students || [];
+          renderPassengers();
+        }
+      } catch (e) {}
+    }
+
+    function renderPassengers() {
+      const container = document.getElementById('student-roster-list');
+      if (!passengers || passengers.length === 0) {
+        container.innerHTML = '<div class="text-center py-3 text-muted small">No students registered on this bus route yet.</div>';
+        document.getElementById('boarded-counter').innerText = '0 / 0 Boarded';
+        return;
+      }
+
+      let boardedCount = 0;
+      container.innerHTML = passengers.map(s => {
+        const isBoarded = s.today_boarded == 1;
+        if (isBoarded) boardedCount++;
+        return `
+          <div class="card p-2 student-item ${isBoarded ? 'boarded' : ''} rounded-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong class="d-block text-dark small">${s.name}</strong>
+                <span class="text-muted" style="font-size: 0.75rem;">Roll: ${s.roll_number} • Stop: ${s.stop_name || 'Pitapalli Square'}</span>
+              </div>
+              <div>
+                ${isBoarded 
+                  ? '<span class="badge bg-success py-1 px-2"><i class="fa-solid fa-check me-1"></i>Boarded</span>'
+                  : `<button class="btn btn-sm btn-outline-primary py-0 px-2 small" onclick="manualBoardStudent('${s.id}')">Board</button>`
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('boarded-counter').innerText = `${boardedCount} / ${passengers.length} Boarded`;
+    }
+
+    async function manualBoardStudent(studentId) {
+      try {
+        const res = await fetch('/api/bus/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ student_id: studentId, bus_id: currentBusId })
+        });
+        const data = await res.json();
+        alert(data.message || 'Student boarded and parent alerted!');
+        await loadPassengers();
+      } catch (err) {
+        alert('Boarding error: ' + err.message);
+      }
+    }
+
+    async function pollBoardingStatus() {
+      await loadPassengers();
+    }
+
+    function onBusChanged() {
+      currentBusId = document.getElementById('bus-select').value;
+      loadBusDetails();
+      loadPassengers();
+    }
+
+    function toggleGpsTracking() {
+      if (!isTracking) {
+        startGps();
+      } else {
+        stopGps();
+      }
+    }
+
+    function startGps() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      isTracking = true;
+      const btn = document.getElementById('btn-toggle-gps');
+      btn.className = 'btn btn-gps-stop w-100';
+      btn.innerHTML = '<i class="fa-solid fa-stop me-2"></i>Stop GPS Sharing';
+
+      document.getElementById('gps-pulse').style.display = 'inline-block';
+      document.getElementById('gps-status-text').innerText = 'Broadcasting Live Location 🟢';
+
+      // Start watching phone position with High Accuracy
+      watchId = navigator.geolocation.watchPosition(
+        onGpsSuccess,
+        onGpsError,
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      );
+    }
+
+    function stopGps() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      isTracking = false;
+      const btn = document.getElementById('btn-toggle-gps');
+      btn.className = 'btn btn-gps-start w-100';
+      btn.innerHTML = '<i class="fa-solid fa-location-crosshairs me-2"></i>Start Live GPS Sharing';
+
+      document.getElementById('gps-pulse').style.display = 'none';
+      document.getElementById('gps-status-text').innerText = 'GPS Idle (Paused)';
+      document.getElementById('speed-display').innerText = '0';
+    }
+
+    async function onGpsSuccess(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const speedKmh = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
+      const heading = position.coords.heading || 0;
+      const accuracy = Math.round(position.coords.accuracy || 5);
+
+      document.getElementById('lat-display').innerText = lat.toFixed(4);
+      document.getElementById('lng-display').innerText = lng.toFixed(4);
+      document.getElementById('speed-display').innerText = speedKmh;
+      document.getElementById('acc-display').innerText = `±${accuracy}m`;
+
+      pingCounter++;
+      document.getElementById('ping-count').innerText = `${pingCounter} Pings Sent`;
+
+      // Transmit to server
+      try {
+        await fetch('/api/bus/telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bus_id: currentBusId,
+            lat,
+            lng,
+            speed: speedKmh,
+            heading,
+            status: 'ACTIVE'
+          })
+        });
+      } catch (err) {
+        console.warn('GPS Telemetry send error:', err);
+      }
+    }
+
+    function onGpsError(err) {
+      console.warn('GPS error:', err);
+      document.getElementById('gps-status-text').innerText = 'GPS Signal Weak / Denied ⚠️';
+    }
+  </script>
+</body>
+</html>
