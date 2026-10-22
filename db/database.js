@@ -189,6 +189,18 @@ async function initDatabase() {
         if (!colNames.includes('guardian_code')) {
           db.run("ALTER TABLE students ADD COLUMN guardian_code TEXT DEFAULT '7421'");
         }
+        if (!colNames.includes('transport_card_id')) {
+          db.run("ALTER TABLE students ADD COLUMN transport_card_id TEXT DEFAULT NULL");
+        }
+        if (!colNames.includes('rfid_uid')) {
+          db.run("ALTER TABLE students ADD COLUMN rfid_uid TEXT DEFAULT NULL");
+        }
+        if (!colNames.includes('card_status')) {
+          db.run("ALTER TABLE students ADD COLUMN card_status TEXT DEFAULT 'ACTIVE'");
+        }
+        if (!colNames.includes('school_name')) {
+          db.run("ALTER TABLE students ADD COLUMN school_name TEXT DEFAULT 'SchoolSafe Public School'");
+        }
 
         // Alter student_face_data if frame_count missing
         try {
@@ -429,7 +441,30 @@ async function initDatabase() {
           if (!bLogColNames.includes('staff_override')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN staff_override INTEGER DEFAULT 0");
           if (!bLogColNames.includes('guardian_code_verified')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN guardian_code_verified INTEGER DEFAULT 0");
           if (!bLogColNames.includes('stage')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN stage TEXT DEFAULT 'BOARD'");
+          if (!bLogColNames.includes('verification_method')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN verification_method TEXT DEFAULT 'FACE'");
+          if (!bLogColNames.includes('verification_status')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN verification_status TEXT DEFAULT 'VERIFIED'");
+          if (!bLogColNames.includes('event_id')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN event_id TEXT DEFAULT NULL");
+          if (!bLogColNames.includes('event_timestamp')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN event_timestamp TEXT DEFAULT NULL");
+          if (!bLogColNames.includes('attendant_id')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN attendant_id TEXT DEFAULT 'ATT-01'");
+          if (!bLogColNames.includes('device_id')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN device_id TEXT DEFAULT 'TERM-BUS-04'");
+          if (!bLogColNames.includes('manual_reason')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN manual_reason TEXT DEFAULT NULL");
+          if (!bLogColNames.includes('offline_synced')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN offline_synced INTEGER DEFAULT 0");
         } catch (e) {}
+
+        // Transport Card Master Table (QR, Barcode, RFID/NFC Identifiers)
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS student_transport_cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            card_uuid TEXT UNIQUE NOT NULL,
+            rfid_uid TEXT,
+            status TEXT DEFAULT 'ACTIVE',
+            issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            issued_by TEXT DEFAULT 'Transport Admin',
+            revoked_at DATETIME,
+            revocation_reason TEXT
+          )
+        `);
 
         // Trips Table for Trip Start/End & Sleeping Child Walkthrough Inspection
         await dbRun(`
@@ -558,6 +593,30 @@ async function initDatabase() {
             await dbRun(
               `INSERT INTO transport_fees (student_id, academic_year, total_fee, paid_amount, pending_amount, status) VALUES (?, '2026', 15000, 15000, 0, 'PAID')`,
               [stu.id]
+            );
+          }
+
+          // Auto-sync Transport Card for Dual Verification
+          const hasCard = await dbGet('SELECT * FROM student_transport_cards WHERE student_id = ? AND status = "ACTIVE"', [stu.id]);
+          if (!hasCard) {
+            let cardUuid = `SC-CARD-${stu.id}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            let rfidUid = `RF-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            if (stu.roll_number === 'ROHAN-04' || stu.student_id === 'STU-ROHAN') {
+              cardUuid = 'SC-CARD-ROH-7421';
+              rfidUid = 'E2-04-74-21';
+            } else if (stu.roll_number === 'BEC26081') {
+              cardUuid = 'SC-CARD-MUN-26081';
+              rfidUid = 'A1-26-08-10';
+            }
+
+            await dbRun(
+              `INSERT INTO student_transport_cards (student_id, card_uuid, rfid_uid, status, issued_by) VALUES (?, ?, ?, 'ACTIVE', 'Transport Admin')`,
+              [stu.id, cardUuid, rfidUid]
+            );
+            await dbRun(
+              `UPDATE students SET transport_card_id = ?, rfid_uid = ?, card_status = 'ACTIVE' WHERE id = ?`,
+              [cardUuid, rfidUid, stu.id]
             );
           }
         }

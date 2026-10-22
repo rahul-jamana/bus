@@ -286,6 +286,7 @@
       <div class="d-none d-lg-flex gap-2 mx-auto">
         <button class="nav-pill-custom active" onclick="switchTab('enroll-tab')"><i class="fa-solid fa-user-plus me-1"></i> Register Student & Face</button>
         <button class="nav-pill-custom" onclick="switchTab('directory-tab')"><i class="fa-solid fa-address-book me-1"></i> Student Directory</button>
+        <button class="nav-pill-custom" onclick="switchTab('attendance-tab')"><i class="fa-solid fa-clipboard-check me-1"></i> Transport Attendance & Cards</button>
         <button class="nav-pill-custom" onclick="switchTab('fleet-tab')"><i class="fa-solid fa-map-location-dot me-1"></i> Live Fleet GPS</button>
         <button class="nav-pill-custom" onclick="switchTab('journey-tab')"><i class="fa-solid fa-route me-1"></i> Journey & Simulation</button>
         <button class="nav-pill-custom" onclick="switchTab('logs-tab')"><i class="fa-solid fa-bell me-1"></i> In/Out Notifications</button>
@@ -771,6 +772,221 @@
       </div>
     </div>
 
+    <!-- TAB 6: TRANSPORT ATTENDANCE MONITORING & STUDENT ID CARDS -->
+    <div id="attendance-tab" class="tab-content-panel" style="display: none;">
+      <div class="card card-custom p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 border-bottom pb-3">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Dual Transport Attendance & Monitoring</h5>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Unified System</span>
+            </div>
+            <span class="text-muted small">Real-time attendance logs across AI Face, Student ID Card, and Attendant Manual verification</span>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <select id="report-bus-filter" class="form-select form-select-sm rounded-pill fw-bold border-primary" style="width: 170px;" onchange="loadAttendanceReport()">
+              <option value="ALL">All Fleet Buses</option>
+              <option value="1">Bus #4 (Khordha)</option>
+              <option value="2">Bus #1 (Bhubaneswar)</option>
+              <option value="3">Bus #2 (Cuttack)</option>
+            </select>
+            <input type="date" id="report-date-filter" class="form-control form-control-sm rounded-pill border-secondary" style="width: 150px;" onchange="loadAttendanceReport()">
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="loadAttendanceReport()">
+              <i class="fa-solid fa-rotate me-1"></i> Refresh
+            </button>
+            <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="exportAttendanceCsv()">
+              <i class="fa-solid fa-file-csv me-1"></i> Export Report
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI SUMMARY CARDS: ATTENDANCE STATUS -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-light rounded-3 border text-center">
+              <span class="text-muted small d-block">Assigned Students</span>
+              <h4 class="fw-bold text-dark mb-0 mt-1" id="rep-total-assigned">0</h4>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-success-subtle rounded-3 border border-success-subtle text-center">
+              <span class="text-success small d-block fw-semibold">Verified Boarded</span>
+              <h4 class="fw-bold text-success mb-0 mt-1" id="rep-boarded">0</h4>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-info-subtle rounded-3 border border-info-subtle text-center">
+              <span class="text-info small d-block fw-semibold">Verified Exited</span>
+              <h4 class="fw-bold text-info mb-0 mt-1" id="rep-exited">0</h4>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-secondary-subtle rounded-3 border text-center">
+              <span class="text-muted small d-block">No Boarding Record</span>
+              <h4 class="fw-bold text-secondary mb-0 mt-1" id="rep-not-boarded">0</h4>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-danger-subtle rounded-3 border border-danger-subtle text-center">
+              <span class="text-danger small d-block fw-semibold">Unresolved Exits ⚠️</span>
+              <h4 class="fw-bold text-danger mb-0 mt-1" id="rep-unresolved-exits">0</h4>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="p-3 bg-warning-subtle rounded-3 border border-warning-subtle text-center">
+              <span class="text-warning small d-block fw-semibold">Failed Attempts</span>
+              <h4 class="fw-bold text-warning mb-0 mt-1" id="rep-failed-count">0</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-METHOD VERIFICATION BREAKDOWN -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border border-primary-subtle bg-white d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary-subtle text-primary p-2 rounded-circle"><i class="fa-solid fa-camera"></i></div>
+                <div>
+                  <span class="small fw-bold text-dark d-block">Method 1 — AI Face Recognition</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">Primary automated verification</span>
+                </div>
+              </div>
+              <h4 class="fw-bold text-primary mb-0" id="rep-face-count">0</h4>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border border-success-subtle bg-white d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-success-subtle text-success p-2 rounded-circle"><i class="fa-solid fa-id-card"></i></div>
+                <div>
+                  <span class="small fw-bold text-dark d-block">Method 2 — Student ID Card</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">Backup QR / Barcode / RFID</span>
+                </div>
+              </div>
+              <h4 class="fw-bold text-success mb-0" id="rep-card-count">0</h4>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border border-warning-subtle bg-white d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-warning-subtle text-warning p-2 rounded-circle"><i class="fa-solid fa-clipboard-user"></i></div>
+                <div>
+                  <span class="small fw-bold text-dark d-block">Method 3 — Emergency Manual</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">Audited trip roster fallback</span>
+                </div>
+              </div>
+              <h4 class="fw-bold text-warning mb-0" id="rep-manual-count">0</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED ATTENDANCE AUDIT LOGS TABLE -->
+        <div class="table-responsive">
+          <table class="table table-custom table-hover align-middle">
+            <thead class="small text-uppercase text-muted">
+              <tr>
+                <th>Time</th>
+                <th>Student</th>
+                <th>Class & Stop</th>
+                <th>Bus & Route</th>
+                <th>Event</th>
+                <th>Method Used</th>
+                <th>Status & Reason</th>
+                <th>Parent Notification</th>
+                <th>Attendant / Device</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-report-tbody" class="small">
+              <tr>
+                <td colspan="9" class="text-center py-4 text-muted">Loading attendance register records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- PRINTABLE STUDENT ID CARD MODAL WITH HIGH-SECURITY QR & BARCODE -->
+  <!-- ========================================================================= -->
+  <div class="modal fade" id="student-id-card-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+      <div class="modal-content card-custom border-0 p-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <h5 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-id-card me-2"></i>Student Transport ID Card</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- PRINTABLE CARD VIEWPORT -->
+        <div id="printable-id-card-area" class="card shadow-sm border border-2 border-primary rounded-4 overflow-hidden mb-3 bg-white">
+          <!-- Card Header / School Banner -->
+          <div class="bg-primary text-white p-3 text-center position-relative" style="background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+              <i class="fa-solid fa-shield-halved fa-lg"></i>
+              <h6 class="fw-bold brand-font text-white mb-0" id="card-modal-school-name">SchoolSafe Public School</h6>
+            </div>
+            <span class="small text-white-50" style="font-size: 0.72rem; letter-spacing: 0.05em;">STUDENT TRANSPORT & SAFETY IDENTITY CARD</span>
+            <span class="badge position-absolute top-0 end-0 m-2 bg-success text-white" id="card-modal-status-badge">ACTIVE</span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-3">
+            <div class="d-flex gap-3 align-items-start mb-3">
+              <img id="card-modal-photo" src="" class="rounded-3 border border-2 border-primary" style="width: 100px; height: 105px; object-fit: cover;">
+              <div class="flex-grow-1">
+                <h5 class="fw-bold text-dark mb-0" id="card-modal-student-name">Rohan Verma</h5>
+                <span class="text-primary fw-bold small d-block" id="card-modal-class">Class V • Section A</span>
+                
+                <div class="small text-muted mt-2">
+                  <div>Roll Number: <strong class="text-dark font-monospace" id="card-modal-roll">ROHAN-04</strong></div>
+                  <div>ERP Student ID: <strong class="text-dark" id="card-modal-erpid">STU-ROHAN</strong></div>
+                  <div>Assigned Bus: <strong class="text-dark" id="card-modal-bus">Bus #4 (Khordha Route)</strong></div>
+                  <div>Stop: <strong class="text-dark" id="card-modal-stop">Pitapalli Square</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- QR Code, Barcode & RFID Metadata -->
+            <div class="p-3 bg-light rounded-3 border text-center">
+              <div class="d-flex justify-content-around align-items-center mb-2">
+                <div>
+                  <!-- Secure Non-Predictable Card QR (NO phone number, NO biometric data) -->
+                  <img id="card-modal-qr-img" src="" style="width: 110px; height: 110px; border-radius: 8px;" class="border p-1 bg-white">
+                  <span class="d-block text-muted mt-1" style="font-size: 0.68rem;">Verified Encrypted QR</span>
+                </div>
+                <div class="text-start ps-2">
+                  <div class="small fw-bold text-secondary mb-1">Secure Transport Token:</div>
+                  <code class="d-block bg-white border p-1 rounded font-monospace small mb-2 text-primary" id="card-modal-uuid">SC-CARD-ROH-7421</code>
+                  <div class="small text-muted mb-1"><i class="fa-solid fa-nfc-directional text-primary me-1"></i>RFID UID: <strong class="text-dark" id="card-modal-rfid">E2-04-74-21</strong></div>
+                  <span class="badge bg-light text-secondary border" style="font-size: 0.70rem;">ISO/IEC 14443 Type A Compatible</span>
+                </div>
+              </div>
+              <div class="border-top pt-2">
+                <span class="text-muted d-block" style="font-size: 0.68rem;">Security Notice: This card is linked to the SchoolSafe Transport System. Property of the school. If found, please return to the transport office.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL CONTROLS: PRINT, REVOKE, REISSUE -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold" onclick="adminRevokeActiveCard()">
+              <i class="fa-solid fa-ban me-1"></i> Revoke Lost Card
+            </button>
+            <button class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="adminReissueNewCard()">
+              <i class="fa-solid fa-rotate me-1"></i> Reissue New Card
+            </button>
+          </div>
+          <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" onclick="printCardElement()">
+            <i class="fa-solid fa-print me-1"></i> Print ID Card
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Notification Toast Container -->
@@ -1080,9 +1296,14 @@
               }
             </td>
             <td>
-              <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="simulateBoarding('${s.student_id || s.id}')" title="Trigger Boarding Alert to Parent">
-                <i class="fa-solid fa-paper-plane me-1"></i> Test Alert
-              </button>
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-info rounded-pill px-2" onclick="openPrintableIdCard('${s.id}')" title="Print/Manage Student Transport ID Card">
+                  <i class="fa-solid fa-id-card me-1"></i> ID Card
+                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-2" onclick="simulateBoarding('${s.student_id || s.id}')" title="Trigger Boarding Alert to Parent">
+                  <i class="fa-solid fa-paper-plane me-1"></i> Alert
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -1253,7 +1474,215 @@
         setTimeout(() => {
           if (leafletMap) leafletMap.invalidateSize();
         }, 200);
+      } else if (tabId === 'attendance-tab') {
+        loadAttendanceReport();
       }
+    }
+
+    // =========================================================================
+    // DUAL TRANSPORT ATTENDANCE MONITORING & REPORTING
+    // =========================================================================
+    async function loadAttendanceReport() {
+      const busFilter = document.getElementById('report-bus-filter')?.value || 'ALL';
+      let dateVal = document.getElementById('report-date-filter')?.value;
+      if (!dateVal) {
+        dateVal = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('report-date-filter');
+        if (dateInput) dateInput.value = dateVal;
+      }
+
+      try {
+        const res = await fetch(`/api/bus/attendance-report?bus_id=${busFilter}&date=${dateVal}`);
+        const data = await res.json();
+        if (data.success) {
+          const s = data.summary;
+          document.getElementById('rep-total-assigned').innerText = s.total_assigned_students || 0;
+          document.getElementById('rep-boarded').innerText = s.verified_boarded || 0;
+          document.getElementById('rep-exited').innerText = s.verified_exited || 0;
+          document.getElementById('rep-not-boarded').innerText = s.students_not_boarded || 0;
+          document.getElementById('rep-unresolved-exits').innerText = s.unresolved_exits || 0;
+          document.getElementById('rep-failed-count').innerText = s.failed_verification_attempts || 0;
+
+          document.getElementById('rep-face-count').innerText = s.face_verification_count || 0;
+          document.getElementById('rep-card-count').innerText = s.id_card_verification_count || 0;
+          document.getElementById('rep-manual-count').innerText = s.manual_verification_count || 0;
+
+          renderAttendanceReportTable(data.detailed_logs || []);
+        }
+      } catch (err) {
+        console.error('Error fetching attendance report:', err);
+      }
+    }
+
+    function renderAttendanceReportTable(logs) {
+      const tbody = document.getElementById('attendance-report-tbody');
+      if (!tbody) return;
+
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No transport attendance events recorded for this selection.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = logs.map(l => {
+        const photo = l.photo_path || l.photo_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=100';
+        const method = l.verification_method || 'FACE';
+        let methodBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-solid fa-camera me-1"></i> FACE</span>';
+        if (method === 'ID_CARD') {
+          methodBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-id-card me-1"></i> ID CARD</span>';
+        } else if (method === 'MANUAL') {
+          methodBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="fa-solid fa-clipboard-user me-1"></i> MANUAL</span>';
+        }
+
+        const isExit = l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT';
+        const eventBadge = isExit 
+          ? '<span class="badge bg-info-subtle text-info border border-info-subtle">EXIT / DROP</span>' 
+          : '<span class="badge bg-success-subtle text-success border border-success-subtle">BOARDING</span>';
+
+        const statusClass = l.verification_status === 'FAILED' ? 'text-danger' : (l.verification_status === 'OVERRIDDEN' ? 'text-warning' : 'text-success');
+
+        return `
+          <tr>
+            <td class="font-monospace fw-bold text-dark">${l.log_time ? l.log_time.split(' ')[1] || l.log_time : 'Recent'}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="${photo}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;">
+                <div>
+                  <strong class="d-block text-dark">${l.student_name || 'Student'}</strong>
+                  <span class="text-muted" style="font-size: 0.72rem;">Roll: ${l.roll_number}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="fw-semibold">${l.branch || 'Class V'}</span>
+              <span class="text-muted d-block" style="font-size: 0.72rem;">Pitapalli Square</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">${l.bus_number || 'Bus #4'}</span>
+              <span class="text-muted d-block" style="font-size: 0.72rem;">${l.route_name || 'Khordha'}</span>
+            </td>
+            <td>${eventBadge}</td>
+            <td>${methodBadge}</td>
+            <td>
+              <strong class="${statusClass}">${l.verification_status || 'VERIFIED'}</strong>
+              ${l.manual_reason ? `<span class="text-muted d-block" style="font-size: 0.70rem;">Reason: ${l.manual_reason}</span>` : ''}
+              ${l.staff_override == 1 ? '<span class="badge bg-warning-subtle text-warning border" style="font-size: 0.65rem;">Staff Override</span>' : ''}
+            </td>
+            <td>
+              <span class="badge bg-success-subtle text-success border border-success" style="font-size: 0.72rem;">
+                <i class="fa-solid fa-check me-1"></i> Parent SMS Sent
+              </span>
+            </td>
+            <td>
+              <span class="text-dark small d-block">${l.attendant_id || 'ATT-01'}</span>
+              <span class="text-muted" style="font-size: 0.70rem;">${l.device_id || 'TERM-BUS-04'}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportAttendanceCsv() {
+      window.open('/api/bus/boarding-register.csv', '_blank');
+    }
+
+    // =========================================================================
+    // PRINTABLE STUDENT ID CARD GENERATION & MANAGEMENT
+    // =========================================================================
+    window.currentActiveCardStudentId = null;
+
+    async function openPrintableIdCard(studentId) {
+      try {
+        const res = await fetch(`/api/students/${studentId}/transport-card`);
+        const data = await res.json();
+        if (!data.success) {
+          alert('Could not retrieve student transport card: ' + data.message);
+          return;
+        }
+
+        const student = data.student;
+        const card = data.card;
+        window.currentActiveCardStudentId = student.id;
+
+        document.getElementById('card-modal-school-name').innerText = student.school_name || 'SchoolSafe Public School';
+        document.getElementById('card-modal-student-name').innerText = student.name;
+        document.getElementById('card-modal-class').innerText = `${student.branch} • Section ${student.section || 'A'}`;
+        document.getElementById('card-modal-roll').innerText = student.roll_number;
+        document.getElementById('card-modal-erpid').innerText = student.student_id;
+        document.getElementById('card-modal-bus').innerText = `${student.bus_number} (${student.route_name} Route)`;
+        document.getElementById('card-modal-stop').innerText = student.pickup_stop_name || 'Pitapalli Square';
+        document.getElementById('card-modal-photo').src = student.photo_path || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200';
+
+        const statusBadge = document.getElementById('card-modal-status-badge');
+        statusBadge.innerText = card.status;
+        statusBadge.className = card.status === 'ACTIVE' ? 'badge position-absolute top-0 end-0 m-2 bg-success text-white' : 'badge position-absolute top-0 end-0 m-2 bg-danger text-white';
+
+        document.getElementById('card-modal-uuid').innerText = card.card_uuid;
+        document.getElementById('card-modal-rfid').innerText = card.rfid_uid || 'E2-04-74-21';
+
+        // High-Security QR Code containing ONLY unguessable card identifier token (no phone, no biometrics)
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(card.card_uuid)}`;
+        document.getElementById('card-modal-qr-img').src = qrUrl;
+
+        const modal = new bootstrap.Modal(document.getElementById('student-id-card-modal'));
+        modal.show();
+      } catch (err) {
+        alert('Error loading student transport card: ' + err.message);
+      }
+    }
+
+    async function adminRevokeActiveCard() {
+      if (!window.currentActiveCardStudentId) return;
+      if (!confirm('Are you sure you want to revoke this student card? The student will not be able to board using this card.')) return;
+
+      try {
+        const res = await fetch(`/api/students/${window.currentActiveCardStudentId}/revoke-card`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Reported lost by parent/guardian' })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Card successfully revoked!');
+        await openPrintableIdCard(window.currentActiveCardStudentId);
+        await loadStudents();
+      } catch (e) {
+        showToast('Error revoking card: ' + e.message);
+      }
+    }
+
+    async function adminReissueNewCard() {
+      if (!window.currentActiveCardStudentId) return;
+      if (!confirm('Reissue a new transport card? Any previous cards will be permanently invalidated.')) return;
+
+      try {
+        const res = await fetch(`/api/students/${window.currentActiveCardStudentId}/reissue-card`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ issued_by: 'Transport Admin' })
+        });
+        const data = await res.json();
+        showToast(data.message || 'New card reissued!');
+        await openPrintableIdCard(window.currentActiveCardStudentId);
+        await loadStudents();
+      } catch (e) {
+        showToast('Error reissuing card: ' + e.message);
+      }
+    }
+
+    function printCardElement() {
+      const cardEl = document.getElementById('printable-id-card-area');
+      const win = window.open('', '', 'height=600,width=600');
+      win.document.write('<html><head><title>Print Student ID Card</title>');
+      win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">');
+      win.document.write('<style>body{padding:20px;font-family:sans-serif;} @media print{body{padding:0;}}</style>');
+      win.document.write('</head><body>');
+      win.document.write(cardEl.outerHTML);
+      win.document.write('</body></html>');
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+        win.close();
+      }, 500);
     }
 
     function autoFillSampleStudent() {

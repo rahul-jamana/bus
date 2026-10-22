@@ -367,14 +367,45 @@ router.post('/', async (req, res) => {
     }
 
     const result = await dbRun(
-      `INSERT INTO students (student_id, name, roll_number, registration_number, branch, department, semester, section, mobile, phone, email, address, parent_name, parent_mobile, parent_whatsapp, parent_email, emergency_contact, face_enrolled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [sId, name, rNum, regNum || `REG-${rNum}`, bName, bName, semester || 'Semester 1', section || 'A', mobNum || '', mobNum || '', email || '', address || '', pName, pMob, pWhatsapp, pEmail, eContact]
+      `INSERT INTO students (student_id, name, roll_number, registration_number, branch, department, semester, section, mobile, phone, email, address, parent_name, parent_mobile, parent_whatsapp, parent_email, emergency_contact, face_enrolled, assigned_bus_id, pickup_stop_name, drop_stop_name, guardian_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+      [sId, name, rNum, regNum || `REG-${rNum}`, bName, bName, semester || 'Semester 1', section || 'A', mobNum || '', mobNum || '', email || '', address || '', pName, pMob, pWhatsapp, pEmail, eContact, req.body.assigned_bus_id || 1, req.body.pickup_stop_name || 'Pitapalli Square', req.body.drop_stop_name || 'Pitapalli Square', req.body.guardian_code || '7421']
+    );
+
+    const newStudentId = result.id;
+    const cardUuid = `SC-CARD-${newStudentId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const rfidUid = `RF-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    await dbRun(
+      `INSERT INTO student_transport_cards (student_id, card_uuid, rfid_uid, status, issued_by) VALUES (?, ?, ?, 'ACTIVE', 'Transport Admin')`,
+      [newStudentId, cardUuid, rfidUid]
+    );
+
+    await dbRun(
+      `UPDATE students SET transport_card_id = ?, rfid_uid = ?, card_status = 'ACTIVE' WHERE id = ?`,
+      [cardUuid, rfidUid, newStudentId]
+    );
+
+    // Auto-create bus registration and transport fee
+    await dbRun(
+      `INSERT INTO bus_registrations (student_id, bus_id, route_id, stop_id, academic_year, fee_status) VALUES (?, ?, 1, 1, '2026', 'PAID')`,
+      [newStudentId, req.body.assigned_bus_id || 1]
     );
 
     res.status(201).json({
       success: true,
-      message: 'Student registered successfully!',
-      student: { id: result.id, student_id: sId, studentId: sId, name, roll_number: rNum, rollNumber: rNum, branch: bName, parent_name: pName }
+      message: 'Student registered & Transport ID card generated successfully!',
+      student: { 
+        id: newStudentId, 
+        student_id: sId, 
+        studentId: sId, 
+        name, 
+        roll_number: rNum, 
+        rollNumber: rNum, 
+        branch: bName, 
+        parent_name: pName,
+        card_uuid: cardUuid,
+        rfid_uid: rfidUid
+      }
     });
   } catch (err) {
     console.error('Error adding student:', err);
@@ -552,6 +583,137 @@ router.get('/:id/gate-logs', async (req, res) => {
   } catch (err) {
     console.error('Error fetching student gate logs:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch student gate logs' });
+  }
+});
+
+// GET /api/students/:id/transport-card - Retrieve printable card details and QR payload
+router.get('/:id/transport-card', async (req, res) => {
+  try {
+    const sId = req.params.id;
+    const student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [sId, sId, sId]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found in ERP directory' });
+    }
+
+    let card = await dbGet('SELECT * FROM student_transport_cards WHERE student_id = ? AND status = "ACTIVE" ORDER BY id DESC LIMIT 1', [student.id]);
+    
+    // Auto-generate if student has no card yet
+    if (!card) {
+      const cardUuid = `SC-CARD-${student.id}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const rfidUid = `RF-${Math.floor(1000 + Math.random() * 9000)}`;
+      const cardRes = await dbRun(
+        `INSERT INTO student_transport_cards (student_id, card_uuid, rfid_uid, status, issued_by) VALUES (?, ?, ?, 'ACTIVE', 'Transport Admin')`,
+        [student.id, cardUuid, rfidUid]
+      );
+      await dbRun(`UPDATE students SET transport_card_id = ?, rfid_uid = ?, card_status = 'ACTIVE' WHERE id = ?`, [cardUuid, rfidUid, student.id]);
+      card = { id: cardRes.id, student_id: student.id, card_uuid: cardUuid, rfid_uid: rfidUid, status: 'ACTIVE', issued_at: new Date().toISOString() };
+    }
+
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [student.assigned_bus_id || 1]);
+
+    res.json({
+      success: true,
+      student: {
+        id: student.id,
+        student_id: student.student_id,
+        name: student.name,
+        roll_number: student.roll_number,
+        branch: student.branch || student.department,
+        section: student.section || 'A',
+        school_name: student.school_name || 'SchoolSafe Public School',
+        photo_path: student.photo_path || '',
+        assigned_bus_id: student.assigned_bus_id || 1,
+        bus_number: bus ? bus.bus_number : 'Bus #4',
+        route_name: bus ? bus.route_name : 'Khordha',
+        pickup_stop_name: student.pickup_stop_name || 'Pitapalli Square',
+        card_status: card.status
+      },
+      card: {
+        id: card.id,
+        card_uuid: card.card_uuid,
+        rfid_uid: card.rfid_uid,
+        status: card.status,
+        issued_at: card.issued_at,
+        // Security requirement: QR payload MUST ONLY contain unguessable card identifier, NO parent phone or biometrics!
+        qr_payload: JSON.stringify({ card_uuid: card.card_uuid, v: 1 }),
+        barcode_value: card.card_uuid
+      }
+    });
+  } catch (err) {
+    console.error('Error in transport-card API:', err);
+    res.status(500).json({ success: false, message: 'Server error retrieving card: ' + err.message });
+  }
+});
+
+// POST /api/students/:id/revoke-card - Revoke lost or damaged card
+router.post('/:id/revoke-card', async (req, res) => {
+  try {
+    const sId = req.params.id;
+    const { reason = 'Card reported lost by parent/guardian' } = req.body;
+    const student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [sId, sId, sId]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    await dbRun(
+      `UPDATE student_transport_cards SET status = 'REVOKED', revoked_at = CURRENT_TIMESTAMP, revocation_reason = ? WHERE student_id = ? AND status = 'ACTIVE'`,
+      [reason, student.id]
+    );
+
+    await dbRun(`UPDATE students SET card_status = 'REVOKED' WHERE id = ?`, [student.id]);
+
+    res.json({
+      success: true,
+      message: `Card for student ${student.name} (${student.roll_number}) successfully REVOKED. Reason: ${reason}`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error revoking card: ' + err.message });
+  }
+});
+
+// POST /api/students/:id/reissue-card - Reissue brand-new transport card
+router.post('/:id/reissue-card', async (req, res) => {
+  try {
+    const sId = req.params.id;
+    const { issued_by = 'Transport Admin' } = req.body;
+    const student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [sId, sId, sId]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Revoke old cards
+    await dbRun(
+      `UPDATE student_transport_cards SET status = 'REVOKED', revoked_at = CURRENT_TIMESTAMP, revocation_reason = 'REISSUED_NEW_CARD' WHERE student_id = ? AND status = 'ACTIVE'`,
+      [student.id]
+    );
+
+    // Generate fresh unpredictable card UUID & RFID
+    const newCardUuid = `SC-CARD-${student.id}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const newRfidUid = `RF-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const cardRes = await dbRun(
+      `INSERT INTO student_transport_cards (student_id, card_uuid, rfid_uid, status, issued_by) VALUES (?, ?, ?, 'ACTIVE', ?)`,
+      [student.id, newCardUuid, newRfidUid, issued_by]
+    );
+
+    await dbRun(
+      `UPDATE students SET transport_card_id = ?, rfid_uid = ?, card_status = 'ACTIVE' WHERE id = ?`,
+      [newCardUuid, newRfidUid, student.id]
+    );
+
+    res.json({
+      success: true,
+      message: `✔ New transport ID card reissued for ${student.name}! Old cards revoked.`,
+      card: {
+        id: cardRes.id,
+        card_uuid: newCardUuid,
+        rfid_uid: newRfidUid,
+        status: 'ACTIVE',
+        issued_at: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error reissuing card: ' + err.message });
   }
 });
 

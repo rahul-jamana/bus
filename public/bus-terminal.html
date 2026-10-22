@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bus Door AI Terminal — SchoolSafe Face Boarding Gate</title>
+  <title>Bus Terminal — SchoolSafe Dual Student Verification System</title>
 
   <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,13 +58,13 @@
     .terminal-nav {
       background: #ffffff;
       border-bottom: 1px solid var(--slate-200);
-      padding: 14px 24px;
+      padding: 12px 24px;
       box-shadow: var(--shadow-sm);
     }
 
     .brand-mark {
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
       border-radius: var(--radius-md);
       display: flex;
@@ -74,10 +74,52 @@
       box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
+    .method-tab-btn {
+      font-weight: 700;
+      font-size: 0.88rem;
+      border-radius: 12px;
+      padding: 10px 18px;
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      color: var(--slate-700);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .method-tab-btn.active-tab {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+    }
+
+    .scan-mode-toggle-btn {
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 8px 14px;
+      border: 2px solid transparent;
+      font-size: 0.82rem;
+      transition: all 0.2s;
+    }
+
+    .scan-mode-toggle-btn.active-boarding {
+      background-color: var(--emerald);
+      color: white;
+      border-color: #047857;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+
+    .scan-mode-toggle-btn.active-exit {
+      background-color: var(--rose);
+      color: white;
+      border-color: #be123c;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+
     .scanner-viewport {
       position: relative;
       width: 100%;
-      height: 480px;
+      height: 440px;
       background: #0f172a;
       border-radius: var(--radius-xl);
       overflow: hidden;
@@ -99,35 +141,13 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 260px;
-      height: 320px;
+      width: 250px;
+      height: 300px;
       border: 2px dashed rgba(56, 189, 248, 0.6);
-      border-radius: 40px;
+      border-radius: 36px;
       pointer-events: none;
       box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5);
       z-index: 5;
-    }
-
-    .scan-mode-btn {
-      font-weight: 700;
-      border-radius: 12px;
-      padding: 10px 18px;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .scan-mode-btn.active-boarding {
-      background-color: var(--emerald);
-      color: white;
-      border-color: #047857;
-      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
-    }
-
-    .scan-mode-btn.active-dropoff {
-      background-color: var(--rose);
-      color: white;
-      border-color: #be123c;
-      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
     }
 
     .card-surface {
@@ -147,101 +167,345 @@
       0% { transform: scale(0.96); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
+
+    .roster-table tr:hover {
+      background-color: #f8fafc;
+      cursor: pointer;
+    }
+
+    .badge-method-face {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .badge-method-card {
+      background-color: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-method-manual {
+      background-color: #fefce8;
+      color: #a16207;
+      border: 1px solid #fef08a;
+    }
   </style>
 </head>
 <body>
 
-  <!-- TERMINAL NAVIGATION -->
-  <nav class="terminal-nav d-flex justify-content-between align-items-center">
+  <!-- TOP SECTION: TERMINAL NAVIGATION & METADATA -->
+  <nav class="terminal-nav d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div class="d-flex align-items-center gap-3">
       <div class="brand-mark">
-        <i class="fa-solid fa-camera fa-lg"></i>
+        <i class="fa-solid fa-shield-halved fa-lg"></i>
       </div>
       <div>
-        <h5 class="fw-bold brand-font text-dark mb-0 lh-1">Bus Door AI Terminal</h5>
-        <span class="text-muted small" style="font-size: 0.78rem;">VisioFace High-Speed Biometric Gate</span>
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="fw-bold brand-font text-dark mb-0 lh-1">SchoolSafe Terminal</h5>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0" style="font-size: 0.72rem;">Dual Verification</span>
+        </div>
+        <span class="text-muted small" style="font-size: 0.78rem;">SchoolSafe Public School &bull; BEC Academy Fleet</span>
       </div>
     </div>
 
-    <!-- Scan Mode Toggles -->
-    <div class="d-flex gap-2">
-      <button id="mode-boarding-btn" class="scan-mode-btn active-boarding" onclick="setScanMode('BOARD')">
-        <i class="fa-solid fa-person-walking-arrow-right me-1"></i> Morning Boarding
-      </button>
-      <button id="mode-dropoff-btn" class="scan-mode-btn btn-light border" onclick="setScanMode('DEBOARD')">
-        <i class="fa-solid fa-graduation-cap me-1"></i> Drop-Off Exit
-      </button>
-    </div>
-
-    <div>
-      <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary rounded-pill px-3 py-2" style="width: 180px;">
+    <!-- Bus, Route, Trip, Network & Attendant Status Badges -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Bus Selector -->
+      <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary rounded-pill px-3 py-1" style="width: 175px;" onchange="handleBusSelectionChange()">
         <option value="1">Bus #4 — Khordha</option>
         <option value="2">Bus #1 — Bhubaneswar</option>
         <option value="3">Bus #2 — Cuttack</option>
       </select>
+
+      <!-- Active Trip Selector -->
+      <select id="trip-selector" class="form-select form-select-sm fw-bold border-secondary rounded-pill px-3 py-1" style="width: 190px;">
+        <option value="TRIP-MORN">Trip 101: Morning Pickup</option>
+        <option value="TRIP-EVE">Trip 102: Return Drop-off</option>
+      </select>
+
+      <!-- Network Status Indicator -->
+      <span id="network-status-badge" class="badge bg-success-subtle text-success border border-success py-2 px-3 rounded-pill">
+        <i class="fa-solid fa-wifi me-1"></i> <strong id="network-status-text">Online</strong>
+      </span>
+
+      <!-- Attendant Identity -->
+      <div class="d-flex align-items-center bg-light px-3 py-1 rounded-pill border">
+        <i class="fa-solid fa-user-tie text-primary me-2"></i>
+        <span class="small fw-bold" id="attendant-name-display">Attendant: Hari Das</span>
+      </div>
+
+      <!-- Offline Sync Badge -->
+      <button id="offline-sync-btn" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold" style="display: none;" onclick="syncOfflineQueue()">
+        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync Queue (<span id="offline-count-num">0</span>)
+      </button>
+
+      <a href="/admin" class="btn btn-sm btn-outline-secondary rounded-pill px-3" title="Admin Portal">
+        <i class="fa-solid fa-sliders"></i>
+      </a>
     </div>
   </nav>
 
-  <div class="container py-4">
-    <div class="row g-4 justify-content-center">
+  <!-- OFFLINE WARNING BANNER -->
+  <div id="offline-banner" class="alert alert-warning py-2 px-4 mb-0 text-center rounded-0 border-0" style="display: none;">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    <strong>Weak/Unavailable Network:</strong> Working in Offline Cache Mode. All scans are securely queued on this device and will sync automatically upon reconnection.
+  </div>
 
-      <!-- AI CAMERA VIEWPORT -->
-      <div class="col-lg-7">
-        <div class="scanner-viewport mb-3">
-          <video id="camera-feed" autoplay playsinline muted></video>
-          <canvas id="scanner-canvas"></canvas>
-          <div class="scan-reticle"></div>
+  <div class="container-fluid px-lg-5 py-4">
 
-          <!-- Top status bar -->
-          <div class="position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill bg-dark bg-opacity-75 text-white small" style="z-index: 10;">
-            <i class="fa-solid fa-satellite text-success me-1"></i> Mode: <strong id="scan-mode-label" class="text-success">Morning Boarding</strong>
-          </div>
-
-          <!-- Bottom Camera Guide -->
-          <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 px-4 py-2 rounded-pill bg-dark bg-opacity-75 text-white small text-center" style="z-index: 10; width: 85%;">
-            <span id="terminal-guide-text"><i class="fa-solid fa-face-viewfinder text-info me-2"></i>Look into camera as you board the bus</span>
-          </div>
+    <!-- MODE SWITCHER: 3 DUAL VERIFICATION METHODS & DIRECTION TOGGLE -->
+    <div class="card-surface p-3 mb-4 shadow-sm">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <!-- 3 Verification Methods -->
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="tab-btn-face" class="method-tab-btn active-tab" onclick="selectVerificationTab('FACE')">
+            <i class="fa-solid fa-camera me-2"></i>Method 1 — AI Face Recognition (Primary)
+          </button>
+          <button id="tab-btn-card" class="method-tab-btn" onclick="selectVerificationTab('CARD')">
+            <i class="fa-solid fa-id-card me-2"></i>Method 2 — Student ID Card (Backup QR/RFID)
+          </button>
+          <button id="tab-btn-manual" class="method-tab-btn" onclick="selectVerificationTab('MANUAL')">
+            <i class="fa-solid fa-clipboard-user me-2"></i>Method 3 — Emergency Manual Roster
+          </button>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center">
-          <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="startScannerCamera()">
-            <i class="fa-solid fa-rotate me-1"></i> Restart Camera
+        <!-- Direction Switcher (Morning Boarding vs Drop-Off Exit) -->
+        <div class="d-flex align-items-center gap-2 bg-light p-1 rounded-3 border">
+          <span class="small text-muted ps-2 fw-semibold">Action:</span>
+          <button id="mode-boarding-btn" class="scan-mode-toggle-btn active-boarding" onclick="setScanAction('BOARD')">
+            <i class="fa-solid fa-person-walking-arrow-right me-1"></i> Boarding
           </button>
-          <span class="small text-muted" id="ai-face-count">0 Enrolled Students In Memory</span>
-          <a href="/admin" class="btn btn-link text-primary btn-sm text-decoration-none fw-bold">Admin Portal →</a>
+          <button id="mode-exit-btn" class="scan-mode-toggle-btn btn-light" onclick="setScanAction('EXIT')">
+            <i class="fa-solid fa-door-open me-1"></i> Exit / Drop-off
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- INSTANT VERIFICATION RESULT & PHOTO PROOF CARD -->
+    <!-- MAIN TWO-COLUMN WORKSPACE -->
+    <div class="row g-4 justify-content-center">
+
+      <!-- LEFT COLUMN: ACTIVE VERIFICATION METHOD INTERFACE -->
+      <div class="col-lg-7">
+
+        <!-- ============================================================ -->
+        <!-- VIEWPORT 1: AI FACE RECOGNITION (METHOD 1) -->
+        <!-- ============================================================ -->
+        <div id="method-panel-face">
+          <div class="scanner-viewport mb-3">
+            <video id="camera-feed" autoplay playsinline muted></video>
+            <canvas id="scanner-canvas"></canvas>
+            <div class="scan-reticle"></div>
+
+            <!-- Top Overlay Badge -->
+            <div class="position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill bg-dark bg-opacity-75 text-white small" style="z-index: 10;">
+              <i class="fa-solid fa-robot text-info me-1"></i> Mode: <strong id="scan-mode-label" class="text-success">Morning Boarding</strong>
+            </div>
+
+            <!-- Bottom Guide Text -->
+            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 px-4 py-2 rounded-pill bg-dark bg-opacity-75 text-white small text-center" style="z-index: 10; width: 85%;">
+              <span id="terminal-guide-text"><i class="fa-solid fa-face-viewfinder text-info me-2"></i>Look into camera as you approach the bus door</span>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="startScannerCamera()">
+                <i class="fa-solid fa-rotate me-1"></i> Restart Camera
+              </button>
+              <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onclick="selectVerificationTab('CARD')">
+                <i class="fa-solid fa-id-card me-1"></i> Camera Broken? Switch to ID Card &rarr;
+              </button>
+            </div>
+            <span class="small text-muted" id="ai-face-count">Loading Face Directory...</span>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VIEWPORT 2: STUDENT ID CARD SCANNER (METHOD 2) -->
+        <!-- ============================================================ -->
+        <div id="method-panel-card" style="display: none;">
+          <div class="card-surface p-4 mb-3 border-2 border-primary-subtle">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                  <i class="fa-solid fa-qrcode fa-lg"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Method 2 — Student ID Card Scanner</h6>
+                  <span class="small text-muted">Supports QR Code, Barcode & RFID/NFC Tag Scanners</span>
+                </div>
+              </div>
+              <span class="badge bg-success-subtle text-success border border-success px-2 py-1">Hardware & Camera Ready</span>
+            </div>
+
+            <!-- Card Input Box (For USB / Bluetooth Barcode Scanners or Manual Entry) -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary mb-1">
+                Scan ID Card or Tap RFID Tag:
+              </label>
+              <div class="input-group input-group-lg">
+                <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-barcode"></i></span>
+                <input type="text" id="id-card-input" class="form-control font-monospace fw-bold" placeholder="Scan QR Token, Barcode, or RFID UID..." onkeydown="handleCardInputKeydown(event)" autofocus>
+                <button class="btn btn-primary px-4 fw-bold" onclick="processCardScanInput()">
+                  <i class="fa-solid fa-magnifying-glass me-1"></i> Scan Card
+                </button>
+              </div>
+              <span class="text-muted small mt-1 d-block" style="font-size: 0.78rem;">
+                Compatible with standard USB/Bluetooth handheld barcode guns, RFID USB readers, or physical ID cards.
+              </span>
+            </div>
+
+            <!-- Quick Demo Simulation Buttons for Method 2 -->
+            <div class="p-3 bg-light rounded-3 border mb-3">
+              <span class="small fw-bold text-dark d-block mb-2"><i class="fa-solid fa-flask text-primary me-1"></i> Quick Test Scenarios (Method 2 — ID Card):</span>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3" onclick="testCardScan('SC-CARD-ROH-7421')">
+                  <i class="fa-solid fa-qrcode me-1"></i> Scan Rohan Verma Card (Valid)
+                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3" onclick="testCardScan('E2-04-74-21')">
+                  <i class="fa-solid fa-nfc-directional me-1"></i> Tap Rohan RFID (E2-04-74-21)
+                </button>
+                <button class="btn btn-sm btn-outline-warning rounded-pill py-1 px-3" onclick="testWrongBusCardScan()">
+                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Scan Wrong Bus Card (Bus #1)
+                </button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill py-1 px-3" onclick="testCardScan('SC-CARD-REVOKED-999')">
+                  <i class="fa-solid fa-ban me-1"></i> Scan Revoked Card
+                </button>
+              </div>
+            </div>
+
+            <!-- Visual Attendant Confirmation Preview for Card Method -->
+            <div id="card-preview-container" class="card p-3 border-primary shadow-sm bg-white" style="display: none;">
+              <div class="d-flex align-items-center gap-3">
+                <img id="card-preview-photo" src="" class="rounded-3 border border-2 border-primary" style="width: 80px; height: 80px; object-fit: cover;">
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark" id="card-preview-name">Student Name</h5>
+                    <span class="badge bg-primary text-white" id="card-preview-bus">Bus #4</span>
+                  </div>
+                  <span class="small text-muted d-block" id="card-preview-roll">Roll: ROHAN-04 &bull; Class V</span>
+                  <span class="small text-success fw-bold d-block mt-1">✔ Card Validated against School ERP</span>
+                </div>
+              </div>
+              <div class="d-flex gap-2 mt-3 pt-2 border-top">
+                <button class="btn btn-success flex-grow-1 fw-bold" onclick="confirmCardAction('BOARD')">
+                  <i class="fa-solid fa-check me-1"></i> Attendant Confirms Boarding
+                </button>
+                <button class="btn btn-danger flex-grow-1 fw-bold" onclick="confirmCardAction('EXIT')">
+                  <i class="fa-solid fa-door-open me-1"></i> Attendant Confirms Exit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VIEWPORT 3: EMERGENCY MANUAL ROSTER (METHOD 3) -->
+        <!-- ============================================================ -->
+        <div id="method-panel-manual" style="display: none;">
+          <div class="card-surface p-4 mb-3 border-2 border-warning-subtle">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-warning-subtle text-warning p-2 rounded-3">
+                  <i class="fa-solid fa-clipboard-user fa-lg"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Method 3 — Emergency Manual Verification</h6>
+                  <span class="small text-muted">Audited fallback when both camera & ID card hardware are unavailable</span>
+                </div>
+              </div>
+              <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">Audited Attendant Fallback</span>
+            </div>
+
+            <!-- Mandatory Reason Selector -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-danger mb-1">
+                <i class="fa-solid fa-asterisk me-1" style="font-size: 0.65rem;"></i> Select Mandatory Verification Reason:
+              </label>
+              <select id="manual-reason-select" class="form-select form-select-sm fw-bold border-danger">
+                <option value="FACE_AND_CARD_UNAVAILABLE">Camera & ID Card Hardware Both Unavailable</option>
+                <option value="CAMERA_DAMAGED_OR_BLIND">Camera Lens Damaged / Glare / Poor Lighting</option>
+                <option value="CARD_LOST_OR_DAMAGED">Student Card Damaged / Forgotten at Home</option>
+                <option value="ATTENDANT_PHYSICAL_CONFIRMATION">Attendant Direct Visual & Identity Check Procedure</option>
+              </select>
+            </div>
+
+            <!-- Student Search in Roster -->
+            <div class="input-group input-group-sm mb-3">
+              <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-search"></i></span>
+              <input type="text" id="roster-search-input" class="form-control" placeholder="Search assigned student by name or roll number..." oninput="filterRosterList()">
+            </div>
+
+            <!-- Bus Trip Student Roster List -->
+            <div class="table-responsive rounded-3 border" style="max-height: 280px; overflow-y: auto;">
+              <table class="table table-sm table-hover align-middle mb-0 roster-table">
+                <thead class="table-light sticky-top small text-uppercase">
+                  <tr>
+                    <th>Photo</th>
+                    <th>Student Name</th>
+                    <th>Roll / Stop</th>
+                    <th>Today Status</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="manual-roster-tbody" class="small">
+                  <tr>
+                    <td colspan="5" class="text-center py-3 text-muted">Loading assigned trip roster...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: UNIFIED STUDENT VERIFICATION RESULT CARD & SAFETY ALERTS -->
       <div class="col-lg-5">
+
+        <!-- UNIFIED RESULT CARD -->
         <div class="card-surface verification-card text-center mb-3" id="verification-card">
-          <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 70px; height: 70px;" id="status-icon-circle">
+          <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 72px; height: 72px;" id="status-icon-circle">
             <i class="fa-solid fa-user-check fa-2x"></i>
           </div>
 
           <h4 class="fw-bold brand-font text-dark mb-1" id="scanned-name">Awaiting Student</h4>
-          <p class="text-muted small mb-3" id="scanned-roll">Stand in front of door camera</p>
+          <p class="text-muted small mb-2" id="scanned-roll">Stand in front of door camera or present ID card</p>
 
+          <!-- Verification Method Badge -->
+          <div class="mb-3">
+            <span class="badge badge-method-face fw-bold px-3 py-1 rounded-pill" id="verification-method-badge">
+              <i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION
+            </span>
+          </div>
+
+          <!-- Structured Details Grid -->
           <div class="p-3 bg-light rounded-3 border mb-3 text-start">
             <div class="d-flex justify-content-between mb-1">
-              <span class="text-muted small">Status:</span>
+              <span class="text-muted small">Verification Status:</span>
               <strong class="text-primary small" id="scanned-status">Standby</strong>
             </div>
             <div class="d-flex justify-content-between mb-1">
-              <span class="text-muted small">Time:</span>
+              <span class="text-muted small">Event Timestamp:</span>
               <strong class="text-dark small" id="scanned-time">--:--</strong>
             </div>
             <div class="d-flex justify-content-between mb-1">
               <span class="text-muted small">Assigned Bus:</span>
               <strong class="text-dark small" id="scanned-bus">Bus #4</strong>
             </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Pickup / Drop Stop:</span>
+              <strong class="text-dark small" id="scanned-stop">Pitapalli Square</strong>
+            </div>
             <div class="d-flex justify-content-between">
-              <span class="text-muted small">Parent SMS:</span>
-              <span class="badge bg-secondary-subtle text-secondary" id="scanned-sms-badge">Pending Scan</span>
+              <span class="text-muted small">Parent Notification:</span>
+              <span class="badge bg-secondary-subtle text-secondary" id="scanned-sms-badge">Awaiting Verification</span>
             </div>
           </div>
 
-          <!-- WRONG BUS ALERT BOX -->
+          <!-- SAFETY CONTROL: WRONG BUS ALERT BOX -->
           <div id="wrong-bus-alert-box" class="alert alert-warning py-3 mb-3 text-start border-warning" style="display: none;">
             <strong class="d-block text-danger fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i> WRONG BUS ALERT!</strong>
             <span id="wrong-bus-message-text" class="small d-block text-dark mb-2">Student is assigned to a different bus!</span>
@@ -250,71 +514,46 @@
             </button>
           </div>
 
+          <!-- SAFETY CONTROL: DUPLICATE ATTENDANCE WARNING BOX -->
+          <div id="duplicate-alert-box" class="alert alert-info py-3 mb-3 text-start border-info" style="display: none;">
+            <strong class="d-block text-primary fs-6"><i class="fa-solid fa-circle-info me-1"></i> DUPLICATE ATTENDANCE BLOCKED</strong>
+            <span id="duplicate-message-text" class="small d-block text-dark">This student has already recorded attendance for this trip.</span>
+          </div>
+
+          <!-- SAFETY CONTROL: REVOKED CARD WARNING BOX -->
+          <div id="revoked-card-alert-box" class="alert alert-danger py-3 mb-3 text-start border-danger" style="display: none;">
+            <strong class="d-block text-danger fs-6"><i class="fa-solid fa-ban me-1"></i> CARD REVOKED OR LOST</strong>
+            <span id="revoked-card-message-text" class="small d-block text-dark">This transport card is no longer valid. Do not honor.</span>
+          </div>
+
+          <!-- Photo Proof Preview -->
           <div id="captured-snapshot-preview" style="display: none;" class="mb-3">
-            <span class="text-muted small d-block mb-1">Live Boarding Photo Captured:</span>
+            <span class="text-muted small d-block mb-1">Live Verified Photo Proof:</span>
             <img id="snapshot-img" src="" class="rounded-3 border border-primary shadow-sm" style="width: 140px; height: 140px; object-fit: cover;">
           </div>
 
-          <div class="alert alert-info py-2 small mb-0 d-flex align-items-center text-start">
+          <!-- Notification Delivery Notice -->
+          <div class="alert alert-light border py-2 small mb-0 d-flex align-items-center text-start">
             <i class="fa-solid fa-bell me-2 text-primary fa-lg"></i>
-            <span id="alert-note-text">Every recognized face instantly notifies parents with photo proof & GPS stop.</span>
+            <span id="alert-note-text" style="font-size: 0.78rem;">Parent notifications work identically for Face, ID Card, and Manual verification.</span>
           </div>
         </div>
 
-        <!-- 3-STAGE DROP-OFF & GUARDIAN HANDOVER PANEL (Shown in Drop-Off mode) -->
-        <div id="dropoff-handover-panel" class="card-surface p-3 mb-3" style="display: none;">
-          <span class="small fw-bold text-danger mb-2 d-block"><i class="fa-solid fa-shield-cat me-1"></i> 3-Stage Drop-Off & Guardian Handover</span>
-          <div class="d-grid gap-2">
-            <button class="btn btn-outline-primary btn-sm fw-bold text-start p-2" onclick="terminalArriveStop()">
-              <i class="fa-solid fa-location-dot text-primary me-2"></i>1. Bus Arrived at Stop (Pitapalli Square)
-            </button>
-            <button class="btn btn-outline-info btn-sm fw-bold text-start p-2 text-dark" onclick="terminalVerifyExit()">
-              <i class="fa-solid fa-door-open text-info me-2"></i>2. Verify Student Exited Bus
-            </button>
-            <div class="mt-1">
-              <label class="form-label small fw-bold text-secondary mb-1">3. Enter Guardian Pickup Code (OTP):</label>
-              <div class="input-group input-group-sm">
-                <input type="text" id="terminal-otp-input" class="form-control font-monospace fw-bold" placeholder="7421" value="7421">
-                <button class="btn btn-success fw-bold" onclick="terminalVerifyHandover()"><i class="fa-solid fa-check me-1"></i> Verify OTP</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- MANUAL ERP ID CARD FALLBACK (Safety Rule: Never strand a child if face fails!) -->
-        <div class="card-surface p-3 mb-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="small fw-bold text-primary"><i class="fa-solid fa-id-card-clip me-1"></i> Manual ERP ID Fallback</span>
-            <span class="badge bg-light text-secondary border">Safety Fallback</span>
-          </div>
-          <div class="input-group input-group-sm mb-2">
-            <input type="text" id="manual-student-input" class="form-control" placeholder="Enter Roll No or ID (e.g. ROHAN-04)">
-            <button class="btn btn-primary fw-bold" onclick="submitManualBoarding()">Verify Boarding</button>
-          </div>
-          <div class="d-flex gap-1 flex-wrap">
-            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('ROHAN-04')">Rohan Verma (ROHAN-04)</button>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('BEC26081')">Munu Nial (BEC26081)</button>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('101')">Rahul Kumar (101)</button>
-          </div>
-        </div>
-
-        <!-- RECENT BOARDING LOGS -->
+        <!-- RECENT ATTENDANCE SCAN LOG -->
         <div class="card-surface p-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="fw-bold text-dark mb-0 small text-uppercase"><i class="fa-solid fa-clock-rotate-left text-primary me-1"></i> Today's Door Scans</h6>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary py-0 px-2 dropdown-toggle rounded-pill" style="font-size: 0.72rem;" data-bs-toggle="dropdown">Quick Demo Scan</button>
-              <ul class="dropdown-menu dropdown-menu-end small shadow border-0">
-                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simCameraMatch('ROHAN-04')">Scan Rohan Verma (Normal)</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simWrongBusScan('ROHAN-04')">Scan Rohan (Wrong Bus Alert)</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simCameraMatch('BEC26081')">Scan Munu Nial</a></li>
-              </ul>
-            </div>
+            <h6 class="fw-bold text-dark mb-0 small text-uppercase">
+              <i class="fa-solid fa-clock-rotate-left text-primary me-1"></i> Today's Door Register
+            </h6>
+            <button class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-bold small" onclick="loadRoster()">
+              <i class="fa-solid fa-rotate me-1"></i> Refresh
+            </button>
           </div>
           <div id="recent-scans-list" class="d-flex flex-column gap-2" style="max-height: 180px; overflow-y: auto;">
-            <div class="text-center py-2 text-muted small">No scans registered yet.</div>
+            <div class="text-center py-2 text-muted small">No scans registered yet today.</div>
           </div>
         </div>
+
       </div>
 
     </div>
@@ -325,41 +564,167 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    let currentMode = 'BOARD'; // 'BOARD' or 'DEBOARD'
+    let currentTab = 'FACE'; // 'FACE', 'CARD', 'MANUAL'
+    let currentAction = 'BOARD'; // 'BOARD' or 'EXIT'
     let isModelLoaded = false;
     let enrolledStudents = [];
     let isScanning = false;
     let lastScanTime = 0;
     let scanInterval = null;
+    let currentRoster = [];
+
+    // Offline Queue Store in localStorage
+    const OFFLINE_QUEUE_KEY = 'schoolsafe_offline_attendance_queue';
 
     window.addEventListener('DOMContentLoaded', async () => {
+      setupNetworkListeners();
       await initAI();
       await loadEnrolledDescriptors();
       await startScannerCamera();
+      await loadRoster();
+      updateOfflineQueueBadge();
     });
 
-    function setScanMode(mode) {
-      currentMode = mode;
-      const bBtn = document.getElementById('mode-boarding-btn');
-      const dBtn = document.getElementById('mode-dropoff-btn');
-      const label = document.getElementById('scan-mode-label');
-      const handoverPanel = document.getElementById('dropoff-handover-panel');
+    // =========================================================================
+    // NETWORK & OFFLINE QUEUE MANAGEMENT
+    // =========================================================================
+    function setupNetworkListeners() {
+      const updateNetStatus = () => {
+        const isOnline = navigator.onLine;
+        const badge = document.getElementById('network-status-badge');
+        const text = document.getElementById('network-status-text');
+        const banner = document.getElementById('offline-banner');
 
-      if (mode === 'BOARD') {
-        bBtn.className = 'scan-mode-btn active-boarding';
-        dBtn.className = 'scan-mode-btn btn-light border';
-        label.innerText = 'Morning Boarding (Entry)';
-        label.className = 'text-success';
-        if (handoverPanel) handoverPanel.style.display = 'none';
-      } else {
-        dBtn.className = 'scan-mode-btn active-dropoff';
-        bBtn.className = 'scan-mode-btn btn-light border';
-        label.innerText = 'Drop-Off Exit (Safe Arrival)';
-        label.className = 'text-danger';
-        if (handoverPanel) handoverPanel.style.display = 'block';
+        if (isOnline) {
+          badge.className = 'badge bg-success-subtle text-success border border-success py-2 px-3 rounded-pill';
+          text.innerText = 'Online';
+          if (banner) banner.style.display = 'none';
+          // Auto-sync pending queue if any
+          syncOfflineQueue();
+        } else {
+          badge.className = 'badge bg-warning-subtle text-warning border border-warning py-2 px-3 rounded-pill';
+          text.innerText = 'Offline';
+          if (banner) banner.style.display = 'block';
+        }
+      };
+
+      window.addEventListener('online', updateNetStatus);
+      window.addEventListener('offline', updateNetStatus);
+      updateNetStatus();
+    }
+
+    function getOfflineQueue() {
+      try {
+        return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+      } catch (e) {
+        return [];
       }
     }
 
+    function saveOfflineQueue(queue) {
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+      updateOfflineQueueBadge();
+    }
+
+    function updateOfflineQueueBadge() {
+      const queue = getOfflineQueue();
+      const btn = document.getElementById('offline-sync-btn');
+      const countEl = document.getElementById('offline-count-num');
+      if (countEl) countEl.innerText = queue.length;
+
+      if (btn) {
+        btn.style.display = queue.length > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    async function syncOfflineQueue() {
+      const queue = getOfflineQueue();
+      if (!queue.length) return;
+      if (!navigator.onLine) {
+        alert('Device is currently offline. Queue will sync automatically once internet connection is restored.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/bus/attendance/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events: queue })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Clear synced events
+          saveOfflineQueue([]);
+          alert(`✔ Offline Synchronisation Successful!\n${data.processed} offline events synced to server. Parents notified.`);
+          await loadRoster();
+        }
+      } catch (err) {
+        console.error('Offline sync failed:', err);
+      }
+    }
+
+    // =========================================================================
+    // TAB & ACTION SWITCHING
+    // =========================================================================
+    function selectVerificationTab(tab) {
+      currentTab = tab;
+      document.getElementById('tab-btn-face').className = tab === 'FACE' ? 'method-tab-btn active-tab' : 'method-tab-btn';
+      document.getElementById('tab-btn-card').className = tab === 'CARD' ? 'method-tab-btn active-tab' : 'method-tab-btn';
+      document.getElementById('tab-btn-manual').className = tab === 'MANUAL' ? 'method-tab-btn active-tab' : 'method-tab-btn';
+
+      document.getElementById('method-panel-face').style.display = tab === 'FACE' ? 'block' : 'none';
+      document.getElementById('method-panel-card').style.display = tab === 'CARD' ? 'block' : 'none';
+      document.getElementById('method-panel-manual').style.display = tab === 'MANUAL' ? 'block' : 'none';
+
+      // Update Method badge on result card
+      const mBadge = document.getElementById('verification-method-badge');
+      if (tab === 'FACE') {
+        mBadge.className = 'badge badge-method-face fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION';
+      } else if (tab === 'CARD') {
+        mBadge.className = 'badge badge-method-card fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-id-card me-1"></i> METHOD: STUDENT ID CARD';
+        setTimeout(() => document.getElementById('id-card-input')?.focus(), 200);
+      } else {
+        mBadge.className = 'badge badge-method-manual fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-clipboard-user me-1"></i> METHOD: EMERGENCY MANUAL';
+      }
+
+      resetAlertBoxes();
+    }
+
+    function setScanAction(action) {
+      currentAction = action;
+      const bBtn = document.getElementById('mode-boarding-btn');
+      const eBtn = document.getElementById('mode-exit-btn');
+      const label = document.getElementById('scan-mode-label');
+
+      if (action === 'BOARD') {
+        bBtn.className = 'scan-mode-toggle-btn active-boarding';
+        eBtn.className = 'scan-mode-toggle-btn btn-light';
+        label.innerText = 'Morning Boarding (Entry)';
+        label.className = 'text-success';
+      } else {
+        eBtn.className = 'scan-mode-toggle-btn active-exit';
+        bBtn.className = 'scan-mode-toggle-btn btn-light';
+        label.innerText = 'Drop-Off Exit (Safe Deboard)';
+        label.className = 'text-danger';
+      }
+    }
+
+    function resetAlertBoxes() {
+      document.getElementById('wrong-bus-alert-box').style.display = 'none';
+      document.getElementById('duplicate-alert-box').style.display = 'none';
+      document.getElementById('revoked-card-alert-box').style.display = 'none';
+    }
+
+    function handleBusSelectionChange() {
+      loadRoster();
+    }
+
+    // =========================================================================
+    // METHOD 1: AI FACE RECOGNITION ENGINE
+    // =========================================================================
     async function initAI() {
       try {
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
@@ -368,7 +733,7 @@
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
         isModelLoaded = true;
       } catch (err) {
-        console.warn('Fallback faceapi load...', err);
+        console.warn('Fallback faceapi model loading...', err);
         const FALLBACK = 'https://justadudewhohacks.github.io/face-api.js/models';
         await faceapi.nets.ssdMobilenetv1.loadFromUri(FALLBACK);
         await faceapi.nets.faceLandmark68Net.loadFromUri(FALLBACK);
@@ -396,6 +761,8 @@
               student_id: s.student_id,
               name: s.name,
               roll_number: s.roll_number,
+              branch: s.branch,
+              photo_path: s.photo_path,
               descriptors: parsedDescriptors
             };
           });
@@ -416,7 +783,8 @@
         video.srcObject = stream;
         startDetectionLoop();
       } catch (err) {
-        alert('Please allow camera permissions: ' + err.message);
+        console.warn('Camera error:', err.message);
+        document.getElementById('terminal-guide-text').innerHTML = '<span class="text-warning">⚠️ Camera unavailable. Switch to ID Card verification.</span>';
       }
     }
 
@@ -427,13 +795,12 @@
       if (scanInterval) clearInterval(scanInterval);
 
       scanInterval = setInterval(async () => {
-        if (!isModelLoaded || !video.readyState || video.paused || video.ended || isScanning) return;
+        if (!isModelLoaded || !video.readyState || video.paused || video.ended || isScanning || currentTab !== 'FACE') return;
 
         const displaySize = { width: video.videoWidth || 640, height: video.videoHeight || 480 };
         faceapi.matchDimensions(canvas, displaySize);
 
         const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -441,13 +808,12 @@
           const resized = faceapi.resizeResults(detection, displaySize);
           faceapi.draw.drawDetections(canvas, resized);
 
-          // Find Best Match from enrolled students
           const queryDescriptor = detection.descriptor;
           const bestMatch = findBestMatch(queryDescriptor);
 
           if (bestMatch && bestMatch.distance < 0.55) {
             const now = Date.now();
-            if (now - lastScanTime > 4000) { // Throttle repeat scan
+            if (now - lastScanTime > 4000) {
               lastScanTime = now;
               handleSuccessfulFaceMatch(bestMatch.student, video);
             }
@@ -475,20 +841,37 @@
 
     async function handleSuccessfulFaceMatch(student, video) {
       isScanning = true;
-      document.getElementById('terminal-guide-text').innerText = `✔ Recognized: ${student.name}! Processing...`;
+      document.getElementById('terminal-guide-text').innerText = `✔ Face Match: ${student.name}! Processing...`;
 
-      // Play Chime
       try { document.getElementById('audio-success').play(); } catch(e){}
 
       // Grab snapshot photo
-      const c = document.createElement('canvas');
-      c.width = video.videoWidth || 640;
-      c.height = video.videoHeight || 480;
-      c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
-      const snapshotBase64 = c.toDataURL('image/jpeg', 0.85);
+      let snapshotBase64 = '';
+      try {
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth || 640;
+        c.height = video.videoHeight || 480;
+        c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+        snapshotBase64 = c.toDataURL('image/jpeg', 0.85);
+      } catch (e) {}
 
       const busId = document.getElementById('bus-terminal-select').value;
-      const endpoint = currentMode === 'BOARD' ? '/api/bus/board' : '/api/bus/verify-exit';
+      const endpoint = currentAction === 'BOARD' ? '/api/bus/board' : '/api/bus/verify-exit';
+
+      // Check Offline Mode
+      if (!navigator.onLine) {
+        handleOfflineAttendance({
+          student_id: student.student_id,
+          roll_number: student.roll_number,
+          student_name: student.name,
+          bus_id: busId,
+          log_type: currentAction === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD',
+          verification_method: 'FACE',
+          photo_url: snapshotBase64
+        });
+        isScanning = false;
+        return;
+      }
 
       try {
         const res = await fetch(endpoint, {
@@ -499,45 +882,333 @@
             roll_number: student.roll_number,
             bus_id: busId,
             photo_url: snapshotBase64,
-            face_confidence: 99.2
+            face_confidence: 99.2,
+            verification_method: 'FACE'
           })
         });
         const data = await res.json();
-
-        // Check for Wrong Bus Warning
-        const wrongBox = document.getElementById('wrong-bus-alert-box');
-        if (data.alert === 'WRONG_BUS') {
-          window.lastWrongRoll = student.roll_number;
-          wrongBox.style.display = 'block';
-          document.getElementById('wrong-bus-message-text').innerText = data.message;
-          document.getElementById('scanned-status').innerText = '⚠️ Wrong Bus Detected';
-          document.getElementById('scanned-status').className = 'text-warning fw-bold';
-        } else {
-          wrongBox.style.display = 'none';
-          document.getElementById('scanned-status').innerText = currentMode === 'BOARD' ? '✔ Boarded Bus' : '✔ Deboarded / Exited';
-          document.getElementById('scanned-status').className = 'text-success fw-bold';
-        }
-
-        // Update UI Card
-        document.getElementById('scanned-name').innerText = student.name;
-        document.getElementById('scanned-roll').innerText = `Roll: ${student.roll_number}`;
-        document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        document.getElementById('scanned-sms-badge').innerText = 'Parent SMS Sent ✅';
-        document.getElementById('scanned-sms-badge').className = 'badge bg-success-subtle text-success border border-success';
-
-        document.getElementById('snapshot-img').src = snapshotBase64;
-        document.getElementById('captured-snapshot-preview').style.display = 'block';
-
-        // Add to recent list
-        addRecentScan(student.name, student.roll_number, currentMode, data.alert);
+        processAttendanceResult(data, student, 'FACE', snapshotBase64);
       } catch (err) {
-        console.error('Error logging scan:', err);
+        console.error('Error logging face match:', err);
       } finally {
         setTimeout(() => {
           isScanning = false;
           document.getElementById('terminal-guide-text').innerHTML = '<i class="fa-solid fa-face-viewfinder text-info me-2"></i>Look into camera as you board the bus';
         }, 3000);
       }
+    }
+
+    // =========================================================================
+    // METHOD 2: STUDENT ID CARD VERIFICATION (QR / BARCODE / RFID)
+    // =========================================================================
+    function handleCardInputKeydown(event) {
+      if (event.key === 'Enter') {
+        processCardScanInput();
+      }
+    }
+
+    async function processCardScanInput() {
+      const input = document.getElementById('id-card-input');
+      const token = input.value.trim();
+      if (!token) {
+        alert('Please scan an ID card or enter a card identifier.');
+        return;
+      }
+
+      const busId = document.getElementById('bus-terminal-select').value;
+
+      // Handle Offline
+      if (!navigator.onLine) {
+        const cachedStudent = findStudentInCachedRosterByCard(token);
+        handleOfflineAttendance({
+          student_id: cachedStudent ? cachedStudent.id : 0,
+          roll_number: cachedStudent ? cachedStudent.roll_number : token,
+          student_name: cachedStudent ? cachedStudent.name : 'Card Student',
+          bus_id: busId,
+          log_type: currentAction === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD',
+          verification_method: 'ID_CARD',
+          card_token: token
+        });
+        input.value = '';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/bus/verify-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            card_token: token,
+            bus_id: busId,
+            action: currentAction,
+            attendant_id: 'Hari Das (ATT-01)',
+            device_id: 'TERM-BUS-04'
+          })
+        });
+        const data = await res.json();
+
+        if (data.student) {
+          // Show visual preview container for attendant confirmation
+          const prevBox = document.getElementById('card-preview-container');
+          prevBox.style.display = 'block';
+          document.getElementById('card-preview-name').innerText = data.student.name;
+          document.getElementById('card-preview-roll').innerText = `Roll: ${data.student.roll || data.student.roll_number} • ${data.student.branch || 'Class V'}`;
+          document.getElementById('card-preview-bus').innerText = data.student.assigned_bus || `Bus #${busId}`;
+          document.getElementById('card-preview-photo').src = data.student.photo_path || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200';
+          window.pendingCardStudent = data.student;
+        }
+
+        processAttendanceResult(data, data.student || { name: 'Card Student', roll_number: token }, 'ID_CARD', data.student?.photo_path);
+        input.value = '';
+      } catch (err) {
+        console.error('Error verifying card:', err);
+      }
+    }
+
+    function testCardScan(token) {
+      document.getElementById('id-card-input').value = token;
+      processCardScanInput();
+    }
+
+    function testWrongBusCardScan() {
+      // Rohan Verma (assigned to Bus #4) attempting on Bus #1
+      document.getElementById('bus-terminal-select').value = '2'; // Bus #1
+      testCardScan('SC-CARD-ROH-7421');
+    }
+
+    async function confirmCardAction(action) {
+      if (!window.pendingCardStudent) return;
+      const busId = document.getElementById('bus-terminal-select').value;
+      const roll = window.pendingCardStudent.roll || window.pendingCardStudent.roll_number;
+
+      try {
+        const res = await fetch('/api/bus/verify-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            card_token: roll,
+            bus_id: busId,
+            action: action,
+            attendant_id: 'Hari Das (ATT-01)'
+          })
+        });
+        const data = await res.json();
+        processAttendanceResult(data, window.pendingCardStudent, 'ID_CARD', window.pendingCardStudent.photo_path);
+        document.getElementById('card-preview-container').style.display = 'none';
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    // =========================================================================
+    // METHOD 3: EMERGENCY MANUAL VERIFICATION ROSTER
+    // =========================================================================
+    async function loadRoster() {
+      const busId = document.getElementById('bus-terminal-select').value;
+      const tbody = document.getElementById('manual-roster-tbody');
+
+      try {
+        const res = await fetch(`/api/bus/roster/${busId}`);
+        const data = await res.json();
+        if (data.success && data.roster) {
+          currentRoster = data.roster;
+          // Cache roster locally for offline access
+          localStorage.setItem(`schoolsafe_cached_roster_bus_${busId}`, JSON.stringify(currentRoster));
+          renderRosterTable(currentRoster);
+        }
+      } catch (err) {
+        console.warn('Network error fetching roster, checking local cache...', err);
+        const cached = localStorage.getItem(`schoolsafe_cached_roster_bus_${busId}`);
+        if (cached) {
+          currentRoster = JSON.parse(cached);
+          renderRosterTable(currentRoster);
+        }
+      }
+    }
+
+    function renderRosterTable(students) {
+      const tbody = document.getElementById('manual-roster-tbody');
+      if (!students.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No students assigned to this bus route.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => {
+        let statusBadge = '<span class="badge bg-secondary-subtle text-secondary">Not Boarded</span>';
+        if (s.current_status === 'BOARDED') {
+          statusBadge = `<span class="badge bg-success-subtle text-success border border-success">Boarded (${s.boarding_time || 'Confirmed'})</span>`;
+        } else if (s.current_status === 'EXITED') {
+          statusBadge = `<span class="badge bg-info-subtle text-info border border-info">Exited (${s.exit_time || 'Confirmed'})</span>`;
+        }
+
+        const photoUrl = s.photo_path || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=100';
+
+        return `
+          <tr>
+            <td>
+              <img src="${photoUrl}" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
+            </td>
+            <td>
+              <strong class="d-block text-dark">${s.name}</strong>
+              <span class="text-muted small" style="font-size: 0.74rem;">${s.branch || 'Class V'} &bull; Card: ${s.card_status || 'ACTIVE'}</span>
+            </td>
+            <td>
+              <span class="font-monospace fw-bold text-primary">${s.roll_number}</span>
+              <span class="text-muted small d-block" style="font-size: 0.74rem;">${s.pickup_stop_name || 'Pitapalli Square'}</span>
+            </td>
+            <td>${statusBadge}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-success fw-bold py-1 px-2" onclick="submitManualAttendance(${s.id}, '${s.roll_number}', 'BOARD')" title="Mark Boarded">
+                  <i class="fa-solid fa-check me-1"></i>Board
+                </button>
+                <button class="btn btn-outline-danger fw-bold py-1 px-2" onclick="submitManualAttendance(${s.id}, '${s.roll_number}', 'EXIT')" title="Mark Exited">
+                  <i class="fa-solid fa-door-open me-1"></i>Exit
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterRosterList() {
+      const q = document.getElementById('roster-search-input').value.toLowerCase().trim();
+      const filtered = currentRoster.filter(s => 
+        s.name.toLowerCase().includes(q) || 
+        s.roll_number.toLowerCase().includes(q)
+      );
+      renderRosterTable(filtered);
+    }
+
+    async function submitManualAttendance(studentId, rollNumber, action) {
+      const reason = document.getElementById('manual-reason-select').value;
+      const busId = document.getElementById('bus-terminal-select').value;
+      const student = currentRoster.find(s => s.id === studentId || s.roll_number === rollNumber);
+
+      // Handle Offline
+      if (!navigator.onLine) {
+        handleOfflineAttendance({
+          student_id: studentId,
+          roll_number: rollNumber,
+          student_name: student?.name || 'Student',
+          bus_id: busId,
+          log_type: action === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD',
+          verification_method: 'MANUAL',
+          manual_reason: reason
+        });
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/bus/verify-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_id: studentId,
+            roll_number: rollNumber,
+            bus_id: busId,
+            action: action,
+            manual_reason: reason,
+            attendant_id: 'Hari Das (ATT-01)'
+          })
+        });
+        const data = await res.json();
+        processAttendanceResult(data, student || { name: 'Student', roll_number: rollNumber }, 'MANUAL', student?.photo_path);
+        loadRoster();
+      } catch (err) {
+        console.error('Error submitting manual attendance:', err);
+      }
+    }
+
+    // =========================================================================
+    // UNIFIED RESULT PROCESSOR & SAFETY ALERT CONTROLS
+    // =========================================================================
+    function processAttendanceResult(data, student, method, photoUrl) {
+      resetAlertBoxes();
+
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const name = student?.name || data.student?.name || 'Student';
+      const roll = student?.roll_number || data.student?.roll || 'N/A';
+      const stop = student?.pickup_stop_name || student?.pickup_stop || 'Pitapalli Square';
+
+      // Update Method Badge
+      const mBadge = document.getElementById('verification-method-badge');
+      if (method === 'FACE') {
+        mBadge.className = 'badge badge-method-face fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION';
+      } else if (method === 'ID_CARD') {
+        mBadge.className = 'badge badge-method-card fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-id-card me-1"></i> METHOD: STUDENT ID CARD';
+      } else {
+        mBadge.className = 'badge badge-method-manual fw-bold px-3 py-1 rounded-pill';
+        mBadge.innerHTML = '<i class="fa-solid fa-clipboard-user me-1"></i> METHOD: EMERGENCY MANUAL';
+      }
+
+      // Check 1: Wrong Bus Alert
+      if (data.alert === 'WRONG_BUS') {
+        window.lastWrongRoll = roll;
+        const box = document.getElementById('wrong-bus-alert-box');
+        box.style.display = 'block';
+        document.getElementById('wrong-bus-message-text').innerText = data.message;
+        document.getElementById('scanned-status').innerText = '⚠️ Wrong Bus Mismatch';
+        document.getElementById('scanned-status').className = 'text-warning fw-bold small';
+        document.getElementById('scanned-name').innerText = name;
+        document.getElementById('scanned-roll').innerText = `Roll: ${roll} • Assigned to ${data.student?.assigned_bus || 'Different Bus'}`;
+        return;
+      }
+
+      // Check 2: Duplicate Attendance Alert
+      if (data.alert === 'DUPLICATE_ATTENDANCE' || data.duplicate) {
+        const box = document.getElementById('duplicate-alert-box');
+        box.style.display = 'block';
+        document.getElementById('duplicate-message-text').innerText = data.message;
+        document.getElementById('scanned-status').innerText = '⚠️ Duplicate Attendance Blocked';
+        document.getElementById('scanned-status').className = 'text-info fw-bold small';
+        document.getElementById('scanned-name').innerText = name;
+        document.getElementById('scanned-roll').innerText = `Roll: ${roll}`;
+        return;
+      }
+
+      // Check 3: Revoked Card Alert
+      if (data.alert === 'REVOKED_CARD') {
+        const box = document.getElementById('revoked-card-alert-box');
+        box.style.display = 'block';
+        document.getElementById('revoked-card-message-text').innerText = data.message;
+        document.getElementById('scanned-status').innerText = '⛔ Revoked Card Rejected';
+        document.getElementById('scanned-status').className = 'text-danger fw-bold small';
+        document.getElementById('scanned-name').innerText = name;
+        document.getElementById('scanned-roll').innerText = `Roll: ${roll}`;
+        return;
+      }
+
+      // Check 4: Unrecognized Card / Face
+      if (!data.success && (data.alert === 'UNKNOWN_CARD' || data.alert === 'UNKNOWN_STUDENT')) {
+        alert(data.message);
+        return;
+      }
+
+      // Success Display
+      try { document.getElementById('audio-success').play(); } catch(e){}
+
+      document.getElementById('scanned-name').innerText = name;
+      document.getElementById('scanned-roll').innerText = `Roll: ${roll} • ${student?.branch || 'Class V'}`;
+      document.getElementById('scanned-time').innerText = timeStr;
+      document.getElementById('scanned-stop').innerText = stop;
+
+      const isExit = currentAction === 'EXIT';
+      document.getElementById('scanned-status').innerText = isExit ? '✔ Safely Exited Bus' : '✔ Safely Boarded Bus';
+      document.getElementById('scanned-status').className = isExit ? 'text-danger fw-bold small' : 'text-success fw-bold small';
+
+      document.getElementById('scanned-sms-badge').innerText = 'Parent SMS Sent ✅';
+      document.getElementById('scanned-sms-badge').className = 'badge bg-success-subtle text-success border border-success';
+
+      if (photoUrl) {
+        document.getElementById('snapshot-img').src = photoUrl;
+        document.getElementById('captured-snapshot-preview').style.display = 'block';
+      }
+
+      addRecentScan(name, roll, currentAction, method);
     }
 
     async function overrideWrongBus() {
@@ -550,155 +1221,89 @@
           body: JSON.stringify({
             roll_number: roll,
             bus_id: busId,
-            staff_override: true,
-            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+            staff_override: true
           })
         });
         const data = await res.json();
         alert(data.message || 'Staff override approved!');
         document.getElementById('wrong-bus-alert-box').style.display = 'none';
         document.getElementById('scanned-status').innerText = '✔ Supervised Boarding (Overridden)';
-        document.getElementById('scanned-status').className = 'text-success fw-bold';
-        addRecentScan('Student Overridden', roll, 'BOARD', 'OVERRIDDEN');
+        document.getElementById('scanned-status').className = 'text-success fw-bold small';
+        addRecentScan('Student Overridden', roll, 'BOARD', 'STAFF_OVERRIDE');
       } catch (e) {
         alert('Override error: ' + e.message);
       }
     }
 
-    function quickManual(roll) {
-      document.getElementById('manual-student-input').value = roll;
-      submitManualBoarding();
+    function handleOfflineAttendance(eventData) {
+      const eventId = `EVT-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const offlineQueue = getOfflineQueue();
+
+      const queueItem = {
+        event_id: eventId,
+        student_id: eventData.student_id,
+        roll_number: eventData.roll_number,
+        bus_id: eventData.bus_id,
+        log_type: eventData.log_type,
+        verification_method: eventData.verification_method,
+        manual_reason: eventData.manual_reason || null,
+        recorded_timestamp: new Date().toISOString(),
+        attendant_id: 'Hari Das (ATT-01)',
+        device_id: 'TERM-BUS-04'
+      };
+
+      offlineQueue.push(queueItem);
+      saveOfflineQueue(offlineQueue);
+
+      // UI Update for offline recording
+      document.getElementById('scanned-name').innerText = eventData.student_name || 'Student';
+      document.getElementById('scanned-roll').innerText = `Roll: ${eventData.roll_number}`;
+      document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('scanned-status').innerText = '✔ Queued Offline (Pending Sync)';
+      document.getElementById('scanned-status').className = 'text-warning fw-bold small';
+      document.getElementById('scanned-sms-badge').innerText = 'Queued for Reconnect';
+      document.getElementById('scanned-sms-badge').className = 'badge bg-warning-subtle text-warning border border-warning';
+
+      addRecentScan(eventData.student_name, eventData.roll_number, currentAction, `${eventData.verification_method} (OFFLINE)`);
+      alert(`[OFFLINE MODE] Attendance event recorded and queued locally on this device.\nParent notification will be triggered upon server synchronisation.`);
     }
 
-    async function submitManualBoarding() {
-      const q = document.getElementById('manual-student-input').value.trim();
-      if (!q) {
-        alert('Please enter a student Roll Number or Admission ID.');
-        return;
-      }
-      const busId = document.getElementById('bus-terminal-select').value;
-      try {
-        const res = await fetch('/api/bus/board', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            roll_number: q,
-            bus_id: busId,
-            manual_entry: true,
-            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
-          })
-        });
-        const data = await res.json();
-        if (data.alert === 'WRONG_BUS') {
-          window.lastWrongRoll = q;
-          document.getElementById('wrong-bus-alert-box').style.display = 'block';
-          document.getElementById('wrong-bus-message-text').innerText = data.message;
-        } else {
-          document.getElementById('wrong-bus-alert-box').style.display = 'none';
-          document.getElementById('scanned-name').innerText = data.student?.name || q;
-          document.getElementById('scanned-roll').innerText = `Roll: ${data.student?.roll || q}`;
-          document.getElementById('scanned-status').innerText = '✔ Boarded (Manual ID Fallback)';
-          document.getElementById('scanned-status').className = 'text-success fw-bold';
-          document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-          document.getElementById('scanned-sms-badge').innerText = 'Parent SMS Sent ✅';
-          addRecentScan(data.student?.name || q, q, 'BOARD', data.alert);
-          alert(data.message || 'Student boarded successfully!');
-        }
-      } catch (e) {
-        alert('Manual boarding error: ' + e.message);
-      }
+    function findStudentInCachedRosterByCard(cardToken) {
+      if (!currentRoster.length) return null;
+      return currentRoster.find(s => 
+        s.card_uuid === cardToken || 
+        s.rfid_uid === cardToken || 
+        s.roll_number === cardToken
+      ) || null;
     }
 
-    async function terminalArriveStop() {
-      const busId = document.getElementById('bus-terminal-select').value;
-      try {
-        const res = await fetch('/api/bus/arrive-stop', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bus_id: busId, stop_name: 'Pitapalli Square' })
-        });
-        const data = await res.json();
-        alert(data.message || 'Stop arrival logged & parents notified!');
-      } catch (e) {
-        alert('Error: ' + e.message);
-      }
-    }
-
-    async function terminalVerifyExit() {
-      const q = document.getElementById('manual-student-input').value.trim() || 'ROHAN-04';
-      const busId = document.getElementById('bus-terminal-select').value;
-      try {
-        const res = await fetch('/api/bus/verify-exit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roll_number: q, bus_id: busId, stop_name: 'Pitapalli Square' })
-        });
-        const data = await res.json();
-        alert(data.message || 'Student exit verified!');
-        addRecentScan(data.student?.name || q, q, 'DEBOARD', 'EXIT');
-      } catch (e) {
-        alert('Error: ' + e.message);
-      }
-    }
-
-    async function terminalVerifyHandover() {
-      const q = document.getElementById('manual-student-input').value.trim() || 'ROHAN-04';
-      const otp = document.getElementById('terminal-otp-input').value.trim();
-      const busId = document.getElementById('bus-terminal-select').value;
-      try {
-        const res = await fetch('/api/bus/verify-handover', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roll_number: q, bus_id: busId, guardian_code: otp, stop_name: 'Pitapalli Square' })
-        });
-        const data = await res.json();
-        if (data.verified) {
-          alert('✔ ' + data.message);
-          addRecentScan(data.student?.name || q, q, 'DEBOARD', 'HANDOVER');
-        } else {
-          alert('❌ ' + data.message);
-        }
-      } catch (e) {
-        alert('Error verifying handover: ' + e.message);
-      }
-    }
-
-    function simCameraMatch(roll) {
-      handleSuccessfulFaceMatch({
-        student_id: roll === 'ROHAN-04' ? 'STU-ROHAN' : 'STU-26081',
-        name: roll === 'ROHAN-04' ? 'Rohan Verma' : 'Munu Nial',
-        roll_number: roll
-      }, document.getElementById('camera-feed'));
-    }
-
-    function simWrongBusScan(roll) {
-      document.getElementById('bus-terminal-select').value = '3';
-      handleSuccessfulFaceMatch({
-        student_id: 'STU-ROHAN',
-        name: 'Rohan Verma',
-        roll_number: 'ROHAN-04'
-      }, document.getElementById('camera-feed'));
-    }
-
-    function addRecentScan(name, roll, mode, alertType = 'NONE') {
-      const container = document.getElementById('recent-scans-list');
+    function addRecentScan(name, roll, action, method) {
+      const list = document.getElementById('recent-scans-list');
       const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const item = document.createElement('div');
-      item.className = 'd-flex justify-content-between align-items-center p-2 rounded bg-light small border';
-      item.innerHTML = `
-        <div>
-          <strong>${name}</strong> <span class="text-muted">(${roll})</span>
-          ${alertType === 'WRONG_BUS' ? '<span class="badge bg-warning text-dark ms-1">Wrong Bus</span>' : ''}
-        </div>
-        <div class="text-end">
-          <span class="badge ${mode === 'BOARD' ? 'bg-success' : 'bg-primary'} py-1">${mode === 'BOARD' ? 'Boarded' : 'Deboarded'}</span>
-          <span class="text-muted d-block" style="font-size: 0.7rem;">${time}</span>
+      const isExit = action === 'EXIT' || action === 'STUDENT_EXIT';
+      const badgeClass = isExit ? 'text-danger' : 'text-success';
+      const icon = method.includes('FACE') ? 'fa-camera' : (method.includes('CARD') ? 'fa-qrcode' : 'fa-clipboard-user');
+
+      const itemHtml = `
+        <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light border">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid ${icon} text-primary"></i>
+            <div>
+              <strong class="small d-block text-dark">${name}</strong>
+              <span class="text-muted" style="font-size: 0.72rem;">Roll: ${roll} &bull; ${method}</span>
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="small fw-bold ${badgeClass}">${isExit ? 'EXIT' : 'BOARD'}</span>
+            <span class="text-muted d-block" style="font-size: 0.70rem;">${time}</span>
+          </div>
         </div>
       `;
-      if (container.children.length === 1 && container.children[0].innerText.includes('No scans')) {
-        container.innerHTML = '';
+
+      if (list.innerHTML.includes('No scans registered')) {
+        list.innerHTML = '';
       }
-      container.prepend(item);
+      list.insertAdjacentHTML('afterbegin', itemHtml);
     }
   </script>
 </body>

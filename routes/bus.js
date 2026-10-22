@@ -58,6 +58,22 @@ router.post('/board', async (req, res) => {
     const pMobile = student.parent_mobile || student.mobile;
     const pName = student.parent_name || 'Parent';
 
+    // Check 1.5: Duplicate Boarding Prevention (Atomic Server-Side Check)
+    const existingBoarding = await dbGet(
+      `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = 'BOARD' AND date(log_time) = date('now')`,
+      [sId, bus_id]
+    );
+    if (existingBoarding) {
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'DUPLICATE_ATTENDANCE',
+        duplicate: true,
+        message: `⚠️ DUPLICATE ATTENDANCE: ${sName} (${sRoll}) has already been recorded as BOARDED on ${busNum} at ${existingBoarding.log_time}. Duplicate boarding rejected.`,
+        student: { id: sId, name: sName, roll: sRoll, assigned_bus: busNum, boarding_time: existingBoarding.log_time }
+      });
+    }
+
     // Check 2: Bus Assignment & Wrong Bus Detection
     const reg = await dbGet('SELECT * FROM bus_registrations WHERE student_id = ? AND is_active = 1', [sId]);
     const assignedBusId = student.assigned_bus_id || (reg ? reg.bus_id : bus_id);
@@ -69,7 +85,7 @@ router.post('/board', async (req, res) => {
       // If staff hasn't confirmed override yet, raise Wrong Bus Warning
       if (!staff_override) {
         await dbRun(
-          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified, stage) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, 'WRONG_BUS', ?, 1, 'BOARD')`,
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified, stage, verification_method, verification_status, attendant_id, device_id) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, 'WRONG_BUS', ?, 1, 'BOARD', 'FACE', 'FAILED', 'ATT-01', 'TERM-BUS-04')`,
           [sId, sRoll, bus_id, route_id, face_confidence, photo_url]
         );
 
@@ -95,7 +111,7 @@ router.post('/board', async (req, res) => {
       } else {
         // Staff override provided! Log with override flag and proceed
         await dbRun(
-          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, ?, ?, 'WRONG_BUS_OVERRIDDEN', ?, 1, 1, 'BOARD')`,
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage, verification_method, verification_status, attendant_id, device_id) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, ?, ?, 'WRONG_BUS_OVERRIDDEN', ?, 1, 1, 'BOARD', 'FACE', 'OVERRIDDEN', 'ATT-01', 'TERM-BUS-04')`,
           [sId, sRoll, bus_id, route_id, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url]
         );
 
@@ -125,7 +141,7 @@ router.post('/board', async (req, res) => {
     // Success Boarding (Correct Bus)
     const isFace = manual_entry ? 0 : 1;
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage) VALUES (?, ?, ?, ?, 'BOARD', ?, ?, ?, ?, 'NONE', ?, 1, ?, 'BOARD')`,
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage, verification_method, verification_status, attendant_id, device_id) VALUES (?, ?, ?, ?, 'BOARD', ?, ?, ?, ?, 'NONE', ?, 1, ?, 'BOARD', 'FACE', 'VERIFIED', 'ATT-01', 'TERM-BUS-04')`,
       [sId, sRoll, bus_id, route_id, isFace, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url, staff_override ? 1 : 0]
     );
 
@@ -315,10 +331,19 @@ router.post('/arrive-stop', async (req, res) => {
   }
 });
 
-// POST /api/bus/verify-exit - Stage 2: Child safely stepped off the bus
+// POST /api/bus/verify-exit - Stage 2: Child safely stepped off the bus (Face, ID Card, or Manual)
 router.post('/verify-exit', async (req, res) => {
   try {
-    const { student_id, roll_number, bus_id = 1, stop_name = 'Pitapalli Square', photo_url = '' } = req.body;
+    const { 
+      student_id, 
+      roll_number, 
+      bus_id = 1, 
+      stop_name = 'Pitapalli Square', 
+      photo_url = '', 
+      verification_method = 'FACE', 
+      attendant_id = 'Hari Das (ATT-01)',
+      device_id = 'TERM-BUS-04'
+    } = req.body;
     const stopName = stop_name || 'Pitapalli Square';
     let student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
     if (!student) return res.status(404).json({ success: false, message: 'Student not found in directory' });
@@ -327,9 +352,26 @@ router.post('/verify-exit', async (req, res) => {
     const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
     const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
 
+    // Duplicate Exit Prevention
+    const existingExit = await dbGet(
+      `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = 'STUDENT_EXIT' AND date(log_time) = date('now')`,
+      [student.id, bus_id]
+    );
+    if (existingExit) {
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'DUPLICATE_ATTENDANCE',
+        duplicate: true,
+        message: `⚠️ DUPLICATE EXIT: ${student.name} (${student.roll_number}) already recorded EXIT from ${busNum} today at ${existingExit.log_time}.`,
+        student: { id: student.id, name: student.name, roll: student.roll_number }
+      });
+    }
+
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, photo_url, parent_notified, stage) VALUES (?, ?, ?, 'STUDENT_EXIT', 1, ?, 1, 'EXIT')`,
-      [student.id, student.roll_number, bus_id, photo_url]
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, photo_url, parent_notified, stage, verification_method, verification_status, attendant_id, device_id) 
+       VALUES (?, ?, ?, 'STUDENT_EXIT', ?, ?, 1, 'EXIT', ?, 'VERIFIED', ?, ?)`,
+      [student.id, student.roll_number, bus_id, verification_method === 'FACE' ? 1 : 0, photo_url, verification_method, attendant_id, device_id]
     );
 
     const smsRes = await dispatchBusSMSNotification('STUDENT_EXIT', {
@@ -345,8 +387,9 @@ router.post('/verify-exit', async (req, res) => {
 
     res.json({
       success: true,
-      message: `✔ VERIFIED EXIT: ${student.name} (${student.roll_number}) safely stepped off at ${stopName}. Ready for guardian handover.`,
+      message: `✔ VERIFIED EXIT: ${student.name} (${student.roll_number}) safely stepped off at ${stopName} via ${verification_method}. Ready for guardian handover.`,
       student: { id: student.id, name: student.name, roll: student.roll_number },
+      verification_method,
       smsContent: smsRes.message
     });
   } catch (err) {
@@ -379,7 +422,7 @@ router.post('/verify-handover', async (req, res) => {
     }
 
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, parent_notified, guardian_code_verified, stage) VALUES (?, ?, ?, 'GUARDIAN_HANDOVER', 1, 1, 1, 'HANDOVER')`,
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, parent_notified, guardian_code_verified, stage, verification_method, verification_status) VALUES (?, ?, ?, 'GUARDIAN_HANDOVER', 1, 1, 1, 'HANDOVER', 'OTP_GUARDIAN', 'VERIFIED')`,
       [student.id, student.roll_number, bus_id]
     );
 
@@ -403,6 +446,626 @@ router.post('/verify-handover', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==============================================================================
+// METHOD 2: STUDENT ID CARD VERIFICATION (QR / BARCODE / RFID)
+// ==============================================================================
+// POST /api/bus/verify-card - Backup verification when face recognition is unavailable
+router.post('/verify-card', async (req, res) => {
+  try {
+    let { 
+      card_token, 
+      rfid_uid, 
+      bus_id = 1, 
+      route_id = 1, 
+      action = 'BOARD', // 'BOARD' or 'EXIT'
+      staff_override = false,
+      attendant_id = 'Hari Das (ATT-01)',
+      device_id = 'TERM-BUS-04',
+      preview_only = false
+    } = req.body;
+
+    if (!card_token && !rfid_uid) {
+      return res.status(400).json({ success: false, message: 'Card token or RFID UID is required' });
+    }
+
+    // Parse card token if JSON payload was scanned from QR code
+    let parsedUuid = (card_token || '').trim();
+    if (parsedUuid.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(parsedUuid);
+        parsedUuid = parsed.card_uuid || parsedUuid;
+      } catch (e) {}
+    }
+
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+    const rName = bus ? bus.route_name : 'Khordha';
+
+    // 1. Look up card in student_transport_cards
+    let card = await dbGet(
+      `SELECT * FROM student_transport_cards 
+       WHERE card_uuid = ? OR (rfid_uid = ? AND rfid_uid IS NOT NULL AND rfid_uid != '') OR card_uuid = ? 
+       ORDER BY id DESC LIMIT 1`,
+      [parsedUuid, rfid_uid || parsedUuid, rfid_uid || parsedUuid]
+    );
+
+    // Fallback lookup in students table directly
+    let student = null;
+    if (card) {
+      student = await dbGet('SELECT * FROM students WHERE id = ?', [card.student_id]);
+    } else {
+      student = await dbGet(
+        `SELECT * FROM students WHERE transport_card_id = ? OR rfid_uid = ? OR roll_number = ? OR student_id = ?`,
+        [parsedUuid, rfid_uid || parsedUuid, parsedUuid, parsedUuid]
+      );
+      if (student) {
+        card = await dbGet('SELECT * FROM student_transport_cards WHERE student_id = ? ORDER BY id DESC LIMIT 1', [student.id]);
+      }
+    }
+
+    // Scenario: Unknown Card
+    if (!student || !card) {
+      await dbRun(
+        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, verification_method, verification_status, attendant_id, device_id) 
+         VALUES (0, 'UNKNOWN_CARD', ?, ?, ?, 0, 'UNKNOWN_CARD', 'ID_CARD', 'FAILED', ?, ?)`,
+        [bus_id, route_id, action === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD', attendant_id, device_id]
+      );
+
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'UNKNOWN_CARD',
+        message: '❌ UNRECOGNIZED ID CARD: Card token not found in school ERP. Attendant must verify student credentials.',
+        time: timeStr
+      });
+    }
+
+    // Scenario: Lost or Revoked Card
+    if (card.status === 'REVOKED' || card.status === 'LOST') {
+      await dbRun(
+        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, verification_method, verification_status, attendant_id, device_id) 
+         VALUES (?, ?, ?, ?, ?, 0, 'REVOKED_CARD', 'ID_CARD', 'FAILED', ?, ?)`,
+        [student.id, student.roll_number, bus_id, route_id, action === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD', attendant_id, device_id]
+      );
+
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'REVOKED_CARD',
+        message: `⛔ CARD REVOKED: This ID card for ${student.name} (${student.roll_number}) was reported lost or revoked! Reason: ${card.revocation_reason || 'Replaced'}. Do not allow boarding.`,
+        student: { id: student.id, name: student.name, roll: student.roll_number, status: 'REVOKED', photo_path: student.photo_path }
+      });
+    }
+
+    const sId = student.id;
+    const sRoll = student.roll_number;
+    const sName = student.name;
+    const pMobile = student.parent_mobile || student.mobile;
+    const pName = student.parent_name || 'Parent';
+
+    // 2. Bus Assignment & Wrong Bus Detection
+    const reg = await dbGet('SELECT * FROM bus_registrations WHERE student_id = ? AND is_active = 1', [sId]);
+    const assignedBusId = student.assigned_bus_id || (reg ? reg.bus_id : bus_id);
+
+    if (assignedBusId && Number(assignedBusId) !== Number(bus_id)) {
+      const assignedBus = await dbGet('SELECT * FROM buses WHERE id = ?', [assignedBusId]);
+      const assignedBusNum = assignedBus ? assignedBus.bus_number : `Bus #${assignedBusId}`;
+
+      if (!staff_override) {
+        await dbRun(
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, verification_method, verification_status, attendant_id, device_id) 
+           VALUES (?, ?, ?, ?, ?, 0, 'WRONG_BUS', 'ID_CARD', 'FAILED', ?, ?)`,
+          [sId, sRoll, bus_id, route_id, action === 'EXIT' ? 'STUDENT_EXIT' : 'BOARD', attendant_id, device_id]
+        );
+
+        await dispatchBusSMSNotification('WRONG_BUS_WARNING', {
+          studentName: sName,
+          rollNumber: sRoll,
+          parentName: pName,
+          parentMobile: pMobile,
+          busNumber: busNum,
+          routeName: rName,
+          studentId: sId,
+          timeStr
+        });
+
+        return res.json({
+          success: false,
+          allowed: false,
+          alert: 'WRONG_BUS',
+          requires_override: true,
+          message: `⚠️ WRONG BUS ALERT: ${sName} (${sRoll}) is assigned to ${assignedBusNum}, but is scanning card on ${busNum}! Staff override required.`,
+          student: { 
+            id: sId, 
+            name: sName, 
+            roll: sRoll, 
+            branch: student.branch,
+            section: student.section,
+            photo_path: student.photo_path,
+            assigned_bus: assignedBusNum, 
+            current_bus: busNum 
+          }
+        });
+      }
+    }
+
+    // 3. Duplicate Attendance Check (Server-Side Idempotency)
+    const logType = (action === 'EXIT') ? 'STUDENT_EXIT' : 'BOARD';
+    const existingLog = await dbGet(
+      `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = ? AND date(log_time) = date('now')`,
+      [sId, bus_id, logType]
+    );
+
+    if (existingLog) {
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'DUPLICATE_ATTENDANCE',
+        duplicate: true,
+        message: `⚠️ DUPLICATE ATTENDANCE: ${sName} (${sRoll}) already has a confirmed ${logType} event on ${busNum} today at ${existingLog.log_time}. Duplicate rejected.`,
+        student: { id: sId, name: sName, roll: sRoll, photo_path: student.photo_path }
+      });
+    }
+
+    // 4. If attendant requested preview only, return profile without inserting
+    if (preview_only) {
+      return res.json({
+        success: true,
+        preview: true,
+        message: `Displaying profile for visual verification: ${sName}`,
+        student: {
+          id: sId,
+          name: sName,
+          roll: sRoll,
+          branch: student.branch,
+          section: student.section,
+          photo_path: student.photo_path,
+          assigned_bus: busNum,
+          pickup_stop: student.pickup_stop_name || 'Pitapalli Square'
+        }
+      });
+    }
+
+    // 5. Success ID Card Verification & Log Entry
+    const alertType = staff_override ? 'WRONG_BUS_OVERRIDDEN' : 'NONE';
+    const verStatus = staff_override ? 'OVERRIDDEN' : 'VERIFIED';
+    const stopName = student.pickup_stop_name || 'Pitapalli Square';
+
+    await dbRun(
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, parent_notified, staff_override, stage, verification_method, verification_status, attendant_id, device_id) 
+       VALUES (?, ?, ?, ?, ?, 0, ?, 1, ?, ?, 'ID_CARD', ?, ?, ?)`,
+      [sId, sRoll, bus_id, route_id, logType, alertType, staff_override ? 1 : 0, action, verStatus, attendant_id, device_id]
+    );
+
+    // 6. Automatic Parent Notification Integration (Identical to Face Recognition)
+    let smsType = logType === 'STUDENT_EXIT' ? 'STUDENT_EXIT' : (staff_override ? 'WRONG_BUS_OVERRIDDEN' : 'BOARD');
+    const smsRes = await dispatchBusSMSNotification(smsType, {
+      studentName: sName,
+      rollNumber: sRoll,
+      parentName: pName,
+      parentMobile: pMobile,
+      busNumber: busNum,
+      routeName: rName,
+      stopName,
+      studentId: sId,
+      timeStr
+    });
+
+    res.json({
+      success: true,
+      allowed: true,
+      overridden: staff_override,
+      verification_method: 'ID_CARD',
+      message: `✔ ID CARD VERIFIED: ${sName} (${sRoll}) confirmed ${action} on ${busNum} at ${timeStr}. Attendant visually confirmed. Parent notified!`,
+      student: { 
+        id: sId, 
+        name: sName, 
+        roll: sRoll, 
+        branch: student.branch,
+        section: student.section,
+        photo_path: student.photo_path,
+        assigned_bus: busNum, 
+        pickup_stop: stopName 
+      },
+      smsContent: smsRes.message
+    });
+  } catch (err) {
+    console.error('Error verifying ID card:', err);
+    res.status(500).json({ success: false, message: 'Server error verifying ID card: ' + err.message });
+  }
+});
+
+// ==============================================================================
+// METHOD 3: EMERGENCY MANUAL VERIFICATION
+// ==============================================================================
+// POST /api/bus/verify-manual - Attendant manual override from roster when both face & card are unavailable
+router.post('/verify-manual', async (req, res) => {
+  try {
+    const { 
+      student_id, 
+      roll_number, 
+      bus_id = 1, 
+      route_id = 1, 
+      action = 'BOARD', // 'BOARD' or 'EXIT'
+      manual_reason, 
+      attendant_id = 'Hari Das (ATT-01)',
+      device_id = 'TERM-BUS-04',
+      staff_override = false 
+    } = req.body;
+
+    if (!manual_reason) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ Mandatory verification reason is required for emergency manual attendance (e.g. FACE_AND_CARD_UNAVAILABLE, CAMERA_DAMAGED, POOR_LIGHTING)'
+      });
+    }
+
+    let student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found in ERP roster' });
+    }
+
+    const sId = student.id;
+    const sRoll = student.roll_number;
+    const sName = student.name;
+    const pMobile = student.parent_mobile || student.mobile;
+    const pName = student.parent_name || 'Parent';
+
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+    const rName = bus ? bus.route_name : 'Khordha';
+
+    // Check Wrong Bus
+    const reg = await dbGet('SELECT * FROM bus_registrations WHERE student_id = ? AND is_active = 1', [sId]);
+    const assignedBusId = student.assigned_bus_id || (reg ? reg.bus_id : bus_id);
+
+    if (assignedBusId && Number(assignedBusId) !== Number(bus_id) && !staff_override) {
+      const assignedBus = await dbGet('SELECT * FROM buses WHERE id = ?', [assignedBusId]);
+      const assignedBusNum = assignedBus ? assignedBus.bus_number : `Bus #${assignedBusId}`;
+
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'WRONG_BUS',
+        requires_override: true,
+        message: `⚠️ WRONG BUS ALERT: ${sName} is assigned to ${assignedBusNum}, but attendant is recording manual attendance on ${busNum}. Staff override required.`,
+        student: { id: sId, name: sName, roll: sRoll, assigned_bus: assignedBusNum, current_bus: busNum }
+      });
+    }
+
+    // Duplicate Check
+    const logType = (action === 'EXIT') ? 'STUDENT_EXIT' : 'BOARD';
+    const existingLog = await dbGet(
+      `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = ? AND date(log_time) = date('now')`,
+      [sId, bus_id, logType]
+    );
+
+    if (existingLog) {
+      return res.json({
+        success: false,
+        allowed: false,
+        alert: 'DUPLICATE_ATTENDANCE',
+        duplicate: true,
+        message: `⚠️ DUPLICATE ATTENDANCE: ${sName} (${sRoll}) already has a confirmed ${logType} event on ${busNum} today at ${existingLog.log_time}. Duplicate manual record rejected.`,
+        student: { id: sId, name: sName, roll: sRoll }
+      });
+    }
+
+    // Store in unified table
+    await dbRun(
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, parent_notified, staff_override, stage, verification_method, verification_status, manual_reason, attendant_id, device_id) 
+       VALUES (?, ?, ?, ?, ?, 0, ?, 1, ?, ?, 'MANUAL', 'VERIFIED', ?, ?, ?)`,
+      [sId, sRoll, bus_id, route_id, logType, staff_override ? 'WRONG_BUS_OVERRIDDEN' : 'NONE', staff_override ? 1 : 0, action, manual_reason, attendant_id, device_id]
+    );
+
+    // Trigger parent notification
+    let smsType = logType === 'STUDENT_EXIT' ? 'STUDENT_EXIT' : (staff_override ? 'WRONG_BUS_OVERRIDDEN' : 'BOARD');
+    const smsRes = await dispatchBusSMSNotification(smsType, {
+      studentName: sName,
+      rollNumber: sRoll,
+      parentName: pName,
+      parentMobile: pMobile,
+      busNumber: busNum,
+      routeName: rName,
+      stopName: student.pickup_stop_name || 'Pitapalli Square',
+      studentId: sId,
+      timeStr
+    });
+
+    res.json({
+      success: true,
+      allowed: true,
+      verification_method: 'MANUAL',
+      message: `✔ EMERGENCY MANUAL VERIFICATION: ${sName} (${sRoll}) confirmed ${action} by attendant (${attendant_id}). Reason: ${manual_reason}. Parent alerted!`,
+      student: { id: sId, name: sName, roll: sRoll },
+      manual_reason,
+      smsContent: smsRes.message
+    });
+  } catch (err) {
+    console.error('Error in manual verification:', err);
+    res.status(500).json({ success: false, message: 'Server error in manual verification: ' + err.message });
+  }
+});
+
+// ==============================================================================
+// BUS ROSTER & OFFLINE CACHE DATA APIS
+// ==============================================================================
+// GET /api/bus/roster/:bus_id - Fetch assigned trip roster with today's verification status
+router.get('/roster/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [busId]);
+    if (!bus) {
+      return res.status(404).json({ success: false, message: 'Bus not found' });
+    }
+
+    // Fetch all students registered or assigned to this bus
+    const students = await dbQuery(`
+      SELECT 
+        s.id, 
+        s.student_id, 
+        s.name, 
+        s.roll_number, 
+        s.branch, 
+        s.section, 
+        s.parent_name, 
+        s.parent_mobile, 
+        s.photo_path, 
+        s.pickup_stop_name, 
+        s.drop_stop_name, 
+        s.guardian_code,
+        s.assigned_bus_id,
+        s.card_status,
+        c.card_uuid,
+        c.rfid_uid
+      FROM students s
+      LEFT JOIN student_transport_cards c ON s.id = c.student_id AND c.status = 'ACTIVE'
+      WHERE s.assigned_bus_id = ? OR s.id IN (SELECT student_id FROM bus_registrations WHERE bus_id = ? AND is_active = 1)
+      GROUP BY s.id
+      ORDER BY s.name ASC
+    `, [busId, busId]);
+
+    // Fetch today's logs for this bus
+    const todayLogs = await dbQuery(
+      `SELECT student_id, log_type, verification_method, log_time 
+       FROM bus_boarding_logs 
+       WHERE bus_id = ? AND date(log_time) = date('now')`,
+      [busId]
+    );
+
+    const roster = students.map(st => {
+      const bLog = todayLogs.find(l => l.student_id === st.id && l.log_type === 'BOARD');
+      const eLog = todayLogs.find(l => l.student_id === st.id && l.log_type === 'STUDENT_EXIT');
+
+      let currentStatus = 'NOT_BOARDED';
+      if (eLog) currentStatus = 'EXITED';
+      else if (bLog) currentStatus = 'BOARDED';
+
+      return {
+        ...st,
+        is_boarded: !!bLog,
+        is_exited: !!eLog,
+        current_status: currentStatus,
+        boarding_time: bLog ? bLog.log_time : null,
+        boarding_method: bLog ? bLog.verification_method : null,
+        exit_time: eLog ? eLog.log_time : null,
+        exit_method: eLog ? eLog.verification_method : null
+      };
+    });
+
+    res.json({
+      success: true,
+      bus_id: Number(busId),
+      bus_number: bus.bus_number,
+      route_name: bus.route_name,
+      total_students: roster.length,
+      roster
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to retrieve bus roster: ' + err.message });
+  }
+});
+
+// POST /api/bus/attendance/sync - Process queued offline attendance events
+router.post('/attendance/sync', async (req, res) => {
+  try {
+    const { events = [] } = req.body;
+    if (!Array.isArray(events) || events.length === 0) {
+      return res.json({ success: true, processed: 0, duplicates_skipped: 0, message: 'No events to sync' });
+    }
+
+    let processed = 0;
+    let duplicatesSkipped = 0;
+
+    for (const ev of events) {
+      const {
+        event_id,
+        student_id,
+        roll_number,
+        bus_id = 1,
+        route_id = 1,
+        log_type = 'BOARD',
+        verification_method = 'ID_CARD',
+        manual_reason = null,
+        recorded_timestamp = new Date().toISOString(),
+        attendant_id = 'Hari Das (ATT-01)',
+        device_id = 'TERM-BUS-04'
+      } = ev;
+
+      // 1. Check idempotency by event_id
+      if (event_id) {
+        const existingEvent = await dbGet('SELECT id FROM bus_boarding_logs WHERE event_id = ?', [event_id]);
+        if (existingEvent) {
+          duplicatesSkipped++;
+          continue;
+        }
+      }
+
+      // 2. Check student duplicate for same date & log_type
+      let student = await dbGet('SELECT * FROM students WHERE id = ? OR roll_number = ?', [student_id, roll_number]);
+      if (student) {
+        const existingLog = await dbGet(
+          `SELECT id FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = ? AND date(log_time) = date(?)`,
+          [student.id, bus_id, log_type, recorded_timestamp]
+        );
+        if (existingLog) {
+          duplicatesSkipped++;
+          continue;
+        }
+      }
+
+      const sId = student ? student.id : student_id;
+      const sRoll = student ? student.roll_number : roll_number;
+      const sName = student ? student.name : 'Student';
+      const pMobile = student ? (student.parent_mobile || student.mobile) : '';
+      const pName = student ? student.parent_name : 'Parent';
+
+      // Insert synced log
+      await dbRun(
+        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, alert_type, parent_notified, stage, verification_method, verification_status, manual_reason, attendant_id, device_id, event_id, event_timestamp, offline_synced, log_time) 
+         VALUES (?, ?, ?, ?, ?, 0, 'NONE', 1, ?, ?, 'VERIFIED', ?, ?, ?, ?, ?, 1, ?)`,
+        [sId, sRoll, bus_id, route_id, log_type, log_type === 'STUDENT_EXIT' ? 'EXIT' : 'BOARD', verification_method, manual_reason, attendant_id, device_id, event_id, recorded_timestamp, recorded_timestamp]
+      );
+
+      // Trigger parent notification with note of recorded time
+      const timeStr = new Date(recorded_timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+      const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+
+      await dispatchBusSMSNotification(log_type === 'STUDENT_EXIT' ? 'STUDENT_EXIT' : 'BOARD', {
+        studentName: sName,
+        rollNumber: sRoll,
+        parentName: pName,
+        parentMobile: pMobile,
+        busNumber: busNum,
+        routeName: bus?.route_name || 'Khordha',
+        stopName: student?.pickup_stop_name || 'Pitapalli Square',
+        studentId: sId,
+        timeStr
+      });
+
+      processed++;
+    }
+
+    res.json({
+      success: true,
+      processed,
+      duplicates_skipped: duplicatesSkipped,
+      message: `✔ Offline Sync complete: ${processed} events processed, ${duplicatesSkipped} duplicates ignored.`
+    });
+  } catch (err) {
+    console.error('Error syncing offline attendance:', err);
+    res.status(500).json({ success: false, message: 'Failed to sync offline attendance: ' + err.message });
+  }
+});
+
+// ==============================================================================
+// TRANSPORT ATTENDANCE MONITORING & REPORTING
+// ==============================================================================
+// GET /api/bus/attendance-report - Comprehensive transport monitoring for School Admin
+router.get('/attendance-report', async (req, res) => {
+  try {
+    const { bus_id, date = new Date().toISOString().split('T')[0] } = req.query;
+
+    let busFilter = '';
+    const params = [date];
+    if (bus_id && bus_id !== 'ALL') {
+      busFilter = ' AND l.bus_id = ?';
+      params.push(bus_id);
+    }
+
+    // 1. Fetch total assigned students
+    let totalAssignedQuery = 'SELECT COUNT(DISTINCT student_id) as count FROM bus_registrations WHERE is_active = 1';
+    let totalAssignedParams = [];
+    if (bus_id && bus_id !== 'ALL') {
+      totalAssignedQuery += ' AND bus_id = ?';
+      totalAssignedParams.push(bus_id);
+    }
+    const totalAssignedRes = await dbGet(totalAssignedQuery, totalAssignedParams);
+    const totalAssigned = totalAssignedRes ? totalAssignedRes.count : 0;
+
+    // 2. Fetch logs for target date
+    const logs = await dbQuery(`
+      SELECT 
+        l.*, 
+        s.name as student_name, 
+        s.branch, 
+        s.section, 
+        s.photo_path,
+        b.bus_number, 
+        b.route_name
+      FROM bus_boarding_logs l
+      LEFT JOIN students s ON l.student_id = s.id
+      LEFT JOIN buses b ON l.bus_id = b.id
+      WHERE date(l.log_time) = date(?)${busFilter}
+      ORDER BY l.id DESC
+    `, params);
+
+    // 3. Aggregate KPIs
+    const boardedStudentIds = new Set();
+    const exitedStudentIds = new Set();
+    let faceCount = 0;
+    let idCardCount = 0;
+    let manualCount = 0;
+    let failedAttempts = 0;
+    let offlineSyncedCount = 0;
+
+    logs.forEach(l => {
+      if (l.log_type === 'BOARD' && l.verification_status !== 'FAILED') {
+        boardedStudentIds.add(l.student_id);
+      }
+      if (l.log_type === 'STUDENT_EXIT' && l.verification_status !== 'FAILED') {
+        exitedStudentIds.add(l.student_id);
+      }
+
+      if (l.verification_method === 'FACE') faceCount++;
+      else if (l.verification_method === 'ID_CARD') idCardCount++;
+      else if (l.verification_method === 'MANUAL') manualCount++;
+
+      if (l.verification_status === 'FAILED' || l.alert_type === 'WRONG_BUS' || l.alert_type === 'REVOKED_CARD' || l.alert_type === 'UNKNOWN') {
+        failedAttempts++;
+      }
+
+      if (l.offline_synced === 1) offlineSyncedCount++;
+    });
+
+    const verifiedBoarded = boardedStudentIds.size;
+    const verifiedExited = exitedStudentIds.size;
+    const notBoarded = Math.max(0, totalAssigned - verifiedBoarded);
+
+    // Unresolved exits: Students who boarded but have no confirmed exit!
+    let unresolvedExits = 0;
+    boardedStudentIds.forEach(sId => {
+      if (!exitedStudentIds.has(sId)) {
+        unresolvedExits++;
+      }
+    });
+
+    res.json({
+      success: true,
+      date,
+      summary: {
+        total_assigned_students: totalAssigned,
+        verified_boarded: verifiedBoarded,
+        verified_exited: verifiedExited,
+        students_not_boarded: notBoarded,
+        unresolved_exits: unresolvedExits,
+        face_verification_count: faceCount,
+        id_card_verification_count: idCardCount,
+        manual_verification_count: manualCount,
+        failed_verification_attempts: failedAttempts,
+        offline_pending_count: offlineSyncedCount
+      },
+      detailed_logs: logs
+    });
+  } catch (err) {
+    console.error('Error generating attendance report:', err);
+    res.status(500).json({ success: false, message: 'Server error generating attendance report: ' + err.message });
   }
 });
 

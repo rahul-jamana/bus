@@ -150,67 +150,68 @@ async function dispatchBusSMSNotification(type, data) {
   switch (type) {
     case 'BOARD':
       subject = `🚌 Bus Boarding Alert: ${studentName}`;
-      message = `BEC Transport\nYour ward ${studentName} boarded ${busNumber} at ${timeStr}.\nRoute: ${routeName}\n- BEC Transport`;
+      message = `SchoolSafe: ${studentName} has boarded ${busNumber} at ${timeStr}. Boarding confirmed.`;
       break;
 
     case 'ARRIVE_COLLEGE':
-      subject = `🎓 College Arrival Alert: ${studentName}`;
-      message = `BEC Transport\nYour ward ${studentName} reached college at ${timeStr}.\n- BEC Transport`;
+    case 'SCHOOL_EXIT':
+      subject = `🎓 School Arrival & Exit Confirmed: ${studentName}`;
+      message = `SchoolSafe: ${studentName}'s exit from ${busNumber} at school has been confirmed at ${timeStr}.`;
       break;
 
     case 'LEAVE_COLLEGE':
-      subject = `🏫 College Departure Alert: ${studentName}`;
-      message = `BEC Transport\nYour ward ${studentName} left college at ${timeStr}.\n- BEC Transport`;
+      subject = `🏫 School Departure Alert: ${studentName}`;
+      message = `SchoolSafe: ${studentName} left school campus on ${busNumber} at ${timeStr}.`;
       break;
 
     case 'RETURN_BOARD':
     case 'DEBOARD':
       subject = `🚌 Return Bus Alert: ${studentName}`;
-      message = `BEC Transport\nYour ward ${studentName} boarded return ${busNumber} at ${timeStr}.\n- BEC Transport`;
+      message = `SchoolSafe: ${studentName} has boarded ${busNumber} for the return journey.`;
       break;
 
     case 'ARRIVE_STOP':
-      subject = `📍 Home Stop Arrival Alert: ${studentName}`;
-      message = `BEC Transport\nYour ward ${studentName} reached ${stopName} at ${timeStr}.\n- BEC Transport`;
+      subject = `📍 Stop Arrival: ${studentName}`;
+      message = `SchoolSafe: ${busNumber} reached ${stopName} at ${timeStr}.`;
+      break;
+
+    case 'STUDENT_EXIT':
+      subject = `🚪 Bus Exit Confirmed: ${studentName}`;
+      message = `SchoolSafe: ${studentName} exited ${busNumber} at ${stopName}.`;
+      break;
+
+    case 'GUARDIAN_HANDOVER':
+      subject = `✅ Guardian Handover Verified: ${studentName}`;
+      message = `SchoolSafe: ${studentName} was safely handed over to an authorised guardian.`;
       break;
 
     case 'WRONG_BUS_WARNING':
       subject = `⚠️ Wrong Bus Alert: ${studentName}`;
-      message = `SchoolSafe Alert\n⚠️ ATTENTION: Your ward ${studentName} attempted to board ${busNumber} (${routeName}) instead of assigned bus! Attendant verification required.\n- SchoolSafe Team`;
+      message = `SchoolSafe: ⚠️ ${studentName} attempted to board ${busNumber} instead of assigned bus. Staff verification required.`;
       break;
 
     case 'WRONG_BUS_OVERRIDDEN':
       subject = `⚠️ Supervised Boarding (Bus Change): ${studentName}`;
-      message = `SchoolSafe Alert\nYour ward ${studentName} has boarded ${busNumber} (${routeName}) under verified staff supervision at ${timeStr}.\n- SchoolSafe Team`;
-      break;
-
-    case 'STUDENT_EXIT':
-      subject = `🚪 Bus Deboarded: ${studentName}`;
-      message = `SchoolSafe Alert\nYour ward ${studentName} has safely stepped off ${busNumber} at ${stopName} (${timeStr}). Awaiting guardian handover.\n- SchoolSafe Team`;
-      break;
-
-    case 'GUARDIAN_HANDOVER':
-      subject = `✅ Guardian Handover Complete: ${studentName}`;
-      message = `SchoolSafe Alert\nVerified Safe Handover: Your ward ${studentName} was safely handed over to guardian at ${stopName} (${timeStr}). OTP verified.\n- SchoolSafe Team`;
+      message = `SchoolSafe: ${studentName} has boarded ${busNumber} under verified staff supervision at ${timeStr}.`;
       break;
 
     case 'SOS_ALERT':
       subject = `🚨 URGENT: Bus Emergency SOS (${busNumber})`;
-      message = `EMERGENCY ALERT: Driver triggered SOS on ${busNumber} (${routeName}) at ${timeStr}. School administration & authorities alerted.\n- SchoolSafe Emergency Desk`;
+      message = `SchoolSafe EMERGENCY: Driver triggered SOS on ${busNumber} (${routeName}) at ${timeStr}. School administration alerted.`;
       break;
 
     case 'TRIP_STARTED':
       subject = `🚌 Bus Trip Commenced: ${busNumber}`;
-      message = `SchoolSafe Update: ${busNumber} has started its ${routeName} route at ${timeStr}. Live tracking is active.\n- SchoolSafe Team`;
+      message = `SchoolSafe Update: ${busNumber} has started its ${routeName} route at ${timeStr}. Live tracking is active.`;
       break;
 
     case 'TRIP_ENDED':
       subject = `🏁 Bus Trip Completed: ${busNumber}`;
-      message = `SchoolSafe Update: ${busNumber} has completed its trip at ${timeStr}. Sleeping-child physical inspection verified.\n- SchoolSafe Team`;
+      message = `SchoolSafe Update: ${busNumber} has completed its trip at ${timeStr}. Sleeping-child physical inspection verified.`;
       break;
 
     default:
-      message = `SchoolSafe\nStatus update for ${studentName} on ${busNumber} at ${timeStr}.\n- SchoolSafe Team`;
+      message = `SchoolSafe: Status update for ${studentName} on ${busNumber} at ${timeStr}.`;
   }
 
   const dateStr = new Date().toISOString().split('T')[0];
