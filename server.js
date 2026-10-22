@@ -78,6 +78,8 @@ const wardenRoutes = require('./routes/warden');
 const securityRoutes = require('./routes/security');
 const busRoutes = require('./routes/bus');
 const transportFeeRoutes = require('./routes/transport-fees');
+const reconciliationRoutes = require('./routes/reconciliationRoutes');
+const { initStopReconciliationDB } = require('./db/stopReconciliationSchema');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
@@ -90,6 +92,12 @@ app.use('/api/warden', wardenRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/bus', busRoutes);
 app.use('/api/transport-fees', transportFeeRoutes);
+app.use('/api/reconciliation', reconciliationRoutes);
+app.use('/', reconciliationRoutes); // Support direct endpoints e.g. /trips/:id/start, /events/board, /stops/:id/depart
+
+app.get(['/stop-reconciliation', '/stop-reconciliation.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'stop-reconciliation.html'));
+});
 
 // Explicit Sub-page Routes
 const uiRoutes = [
@@ -144,7 +152,8 @@ module.exports = { app, initDatabase };
 // Start server if run directly (e.g. node server.js)
 if (require.main === module) {
   initDatabase()
-    .then(() => {
+    .then(async () => {
+      await initStopReconciliationDB();
       const localIp = getLocalIpAddress();
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`====================================================`);
