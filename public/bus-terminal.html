@@ -8,7 +8,7 @@
   <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
@@ -18,6 +18,8 @@
   <style>
     :root {
       --primary: #1d4ed8;
+      --primary-dark: #1e40af;
+      --primary-light: #eff6ff;
       --navy: #0f172a;
       --slate-900: #0f172a;
       --slate-800: #1e293b;
@@ -28,15 +30,19 @@
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --emerald: #059669;
-      --emerald-bg: #ecfdf5;
+      --emerald-subtle: #ecfdf5;
       --amber: #d97706;
+      --amber-subtle: #fffbeb;
       --rose: #e11d48;
+      --rose-subtle: #fff1f2;
+      --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
       --radius-xl: 24px;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08);
       --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08);
+      --shadow-xl: 0 20px 30px -5px rgb(15 23 42 / 0.12);
     }
 
     * { box-sizing: border-box; }
@@ -46,7 +52,7 @@
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: var(--slate-800);
       margin: 0;
-      padding-bottom: 40px;
+      padding-bottom: 50px;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -55,76 +61,152 @@
       letter-spacing: -0.02em;
     }
 
+    /* Sleek Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Top Navigation Header */
     .terminal-nav {
       background: #ffffff;
       border-bottom: 1px solid var(--slate-200);
-      padding: 12px 24px;
+      padding: 14px 28px;
       box-shadow: var(--shadow-sm);
     }
 
     .brand-mark {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.28);
     }
 
-    .method-tab-btn {
-      font-weight: 700;
-      font-size: 0.88rem;
-      border-radius: 12px;
-      padding: 10px 18px;
-      border: 1px solid var(--slate-200);
-      background: #ffffff;
-      color: var(--slate-700);
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    .method-tab-btn.active-tab {
-      background: var(--primary);
-      color: #ffffff;
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
-    }
-
-    .scan-mode-toggle-btn {
-      font-weight: 700;
-      border-radius: 10px;
-      padding: 8px 14px;
-      border: 2px solid transparent;
+    /* Workflow Step Guide */
+    .workflow-guide-banner {
+      background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 50%, #eff6ff 100%);
+      border-bottom: 1px solid #bfdbfe;
+      padding: 8px 20px;
       font-size: 0.82rem;
+    }
+
+    /* Clean Method Selection Cards */
+    .method-tab-card {
+      background: #ffffff;
+      border: 2px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      user-select: none;
+    }
+
+    .method-tab-card:hover {
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .method-tab-card.active-tab {
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 8px 20px rgba(29, 78, 216, 0.16);
+      position: relative;
+    }
+
+    .method-tab-card.active-tab::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 20%;
+      right: 20%;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 4px 4px 0 0;
+    }
+
+    .method-icon-bubble {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
       transition: all 0.2s;
     }
 
-    .scan-mode-toggle-btn.active-boarding {
-      background-color: var(--emerald);
-      color: white;
-      border-color: #047857;
+    .method-tab-card.active-tab .method-icon-bubble.face-bubble {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .method-tab-card.active-tab .method-icon-bubble.card-bubble {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .method-tab-card.active-tab .method-icon-bubble.manual-bubble {
+      background: #fef9c3;
+      color: #a16207;
+    }
+
+    /* Direction Action Toggle Buttons */
+    .direction-toggle-container {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 6px;
+      display: inline-flex;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .direction-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: none;
+      background: transparent;
+      color: var(--slate-600);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .direction-btn.active-boarding {
+      background: var(--emerald);
+      color: #ffffff;
       box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     }
 
-    .scan-mode-toggle-btn.active-exit {
-      background-color: var(--rose);
-      color: white;
-      border-color: #be123c;
+    .direction-btn.active-exit {
+      background: var(--rose);
+      color: #ffffff;
       box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
     }
 
+    /* AI Camera Viewport */
     .scanner-viewport {
       position: relative;
       width: 100%;
-      height: 440px;
+      height: 460px;
       background: #0f172a;
       border-radius: var(--radius-xl);
       overflow: hidden;
       border: 3px solid #38bdf8;
-      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.25);
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.22);
     }
 
     #camera-feed, #scanner-canvas {
@@ -142,53 +224,92 @@
       left: 50%;
       transform: translate(-50%, -50%);
       width: 250px;
-      height: 300px;
-      border: 2px dashed rgba(56, 189, 248, 0.6);
-      border-radius: 36px;
+      height: 310px;
+      border: 3px dashed rgba(56, 189, 248, 0.75);
+      border-radius: 40px;
       pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5);
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.52);
       z-index: 5;
+      animation: pulseReticle 2.5s infinite ease-in-out;
     }
 
+    @keyframes pulseReticle {
+      0%, 100% { border-color: rgba(56, 189, 248, 0.8); }
+      50% { border-color: rgba(74, 222, 128, 0.9); }
+    }
+
+    /* Cards & Surfaces */
     .card-surface {
       background: var(--card-bg);
       border: 1px solid var(--slate-200);
       border-radius: var(--radius-xl);
       padding: 24px;
-      box-shadow: var(--shadow-lg);
-      transition: all 0.2s ease;
+      box-shadow: var(--shadow-md);
+      transition: all 0.25s ease;
     }
 
+    .card-surface:hover {
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Standby Radar Animation */
+    .standby-radar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: #1d4ed8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      position: relative;
+    }
+
+    .standby-radar::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+      animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes radarPing {
+      75%, 100% {
+        transform: scale(1.6);
+        opacity: 0;
+      }
+    }
+
+    /* Verified Result Card Animation */
     .verification-card {
-      animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes popIn {
-      0% { transform: scale(0.96); opacity: 0; }
+      0% { transform: scale(0.95); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
 
-    .roster-table tr:hover {
-      background-color: #f8fafc;
+    .quick-test-chip {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--slate-700);
       cursor: pointer;
+      transition: all 0.2s ease;
     }
 
-    .badge-method-face {
-      background-color: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
-    }
-
-    .badge-method-card {
-      background-color: #f0fdf4;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-
-    .badge-method-manual {
-      background-color: #fefce8;
-      color: #a16207;
-      border: 1px solid #fef08a;
+    .quick-test-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
   </style>
 </head>
@@ -203,7 +324,7 @@
       <div>
         <div class="d-flex align-items-center gap-2">
           <h5 class="fw-bold brand-font text-dark mb-0 lh-1">SchoolSafe Terminal</h5>
-          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0" style="font-size: 0.72rem;">Dual Verification</span>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0" style="font-size: 0.72rem;">Dual Verification Gate</span>
         </div>
         <span class="text-muted small" style="font-size: 0.78rem;">SchoolSafe Public School &bull; BEC Academy Fleet</span>
       </div>
@@ -212,11 +333,14 @@
     <!-- Bus, Route, Trip, Network & Attendant Status Badges -->
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <!-- Bus Selector -->
-      <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary rounded-pill px-3 py-1" style="width: 175px;" onchange="handleBusSelectionChange()">
-        <option value="1">Bus #4 — Khordha</option>
-        <option value="2">Bus #1 — Bhubaneswar</option>
-        <option value="3">Bus #2 — Cuttack</option>
-      </select>
+      <div class="input-group input-group-sm" style="width: 185px;">
+        <span class="input-group-text bg-white border-primary text-primary"><i class="fa-solid fa-bus"></i></span>
+        <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary" onchange="handleBusSelectionChange()">
+          <option value="1">Bus #4 — Khordha</option>
+          <option value="2">Bus #1 — Bhubaneswar</option>
+          <option value="3">Bus #2 — Cuttack</option>
+        </select>
+      </div>
 
       <!-- Active Trip Selector -->
       <select id="trip-selector" class="form-select form-select-sm fw-bold border-secondary rounded-pill px-3 py-1" style="width: 190px;">
@@ -246,38 +370,78 @@
     </div>
   </nav>
 
+  <!-- 3-STEP CLEAR USER WORKFLOW GUIDE -->
+  <div class="workflow-guide-banner d-flex justify-content-between align-items-center text-dark">
+    <div class="d-flex align-items-center gap-3">
+      <span class="badge bg-primary text-white rounded-pill px-2">How It Works</span>
+      <span><strong>Step 1:</strong> Choose Face, ID Card, or Manual Roster</span>
+      <span class="text-muted">&bull;</span>
+      <span><strong>Step 2:</strong> Scan or Select Student</span>
+      <span class="text-muted">&bull;</span>
+      <span><strong>Step 3:</strong> Identity Verified & Real-Time Parent SMS Dispatched</span>
+    </div>
+    <span class="text-muted small"><i class="fa-solid fa-shield-cat me-1 text-primary"></i> Zero Stranded Children Policy Active</span>
+  </div>
+
   <!-- OFFLINE WARNING BANNER -->
   <div id="offline-banner" class="alert alert-warning py-2 px-4 mb-0 text-center rounded-0 border-0" style="display: none;">
     <i class="fa-solid fa-triangle-exclamation me-2"></i>
-    <strong>Weak/Unavailable Network:</strong> Working in Offline Cache Mode. All scans are securely queued on this device and will sync automatically upon reconnection.
+    <strong>Working in Offline Cache Mode:</strong> Network unavailable. All scans are securely queued on this device and will sync automatically upon reconnection.
   </div>
 
   <div class="container-fluid px-lg-5 py-4">
 
     <!-- MODE SWITCHER: 3 DUAL VERIFICATION METHODS & DIRECTION TOGGLE -->
-    <div class="card-surface p-3 mb-4 shadow-sm">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <!-- 3 Verification Methods -->
-        <div class="d-flex gap-2 flex-wrap">
-          <button id="tab-btn-face" class="method-tab-btn active-tab" onclick="selectVerificationTab('FACE')">
-            <i class="fa-solid fa-camera me-2"></i>Method 1 — AI Face Recognition (Primary)
-          </button>
-          <button id="tab-btn-card" class="method-tab-btn" onclick="selectVerificationTab('CARD')">
-            <i class="fa-solid fa-id-card me-2"></i>Method 2 — Student ID Card (Backup QR/RFID)
-          </button>
-          <button id="tab-btn-manual" class="method-tab-btn" onclick="selectVerificationTab('MANUAL')">
-            <i class="fa-solid fa-clipboard-user me-2"></i>Method 3 — Emergency Manual Roster
-          </button>
-        </div>
+    <div class="row g-3 mb-4 align-items-center">
+      <!-- 3 Verification Method Cards -->
+      <div class="col-lg-8">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <div id="tab-btn-face" class="method-tab-card active-tab" onclick="selectVerificationTab('FACE')">
+              <div class="method-icon-bubble face-bubble">
+                <i class="fa-solid fa-camera"></i>
+              </div>
+              <div class="lh-sm">
+                <strong class="d-block text-dark font-monospace" style="font-size: 0.88rem;">1. AI FACE SCAN</strong>
+                <span class="text-muted small" style="font-size: 0.74rem;">Primary &bull; High-speed camera</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Direction Switcher (Morning Boarding vs Drop-Off Exit) -->
-        <div class="d-flex align-items-center gap-2 bg-light p-1 rounded-3 border">
-          <span class="small text-muted ps-2 fw-semibold">Action:</span>
-          <button id="mode-boarding-btn" class="scan-mode-toggle-btn active-boarding" onclick="setScanAction('BOARD')">
-            <i class="fa-solid fa-person-walking-arrow-right me-1"></i> Boarding
+          <div class="col-md-4">
+            <div id="tab-btn-card" class="method-tab-card" onclick="selectVerificationTab('CARD')">
+              <div class="method-icon-bubble card-bubble">
+                <i class="fa-solid fa-id-card"></i>
+              </div>
+              <div class="lh-sm">
+                <strong class="d-block text-dark font-monospace" style="font-size: 0.88rem;">2. ID CARD SCAN</strong>
+                <span class="text-muted small" style="font-size: 0.74rem;">Backup &bull; QR, Barcode, RFID</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div id="tab-btn-manual" class="method-tab-card" onclick="selectVerificationTab('MANUAL')">
+              <div class="method-icon-bubble manual-bubble">
+                <i class="fa-solid fa-clipboard-user"></i>
+              </div>
+              <div class="lh-sm">
+                <strong class="d-block text-dark font-monospace" style="font-size: 0.88rem;">3. EMERGENCY ROSTER</strong>
+                <span class="text-muted small" style="font-size: 0.74rem;">Fallback &bull; Audited manual check</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction Action Switcher (Morning Boarding vs Afternoon Exit) -->
+      <div class="col-lg-4 text-lg-end">
+        <div class="direction-toggle-container">
+          <button id="mode-boarding-btn" class="direction-btn active-boarding" onclick="setScanAction('BOARD')">
+            <i class="fa-solid fa-person-walking-arrow-right"></i> Morning Boarding
           </button>
-          <button id="mode-exit-btn" class="scan-mode-toggle-btn btn-light" onclick="setScanAction('EXIT')">
-            <i class="fa-solid fa-door-open me-1"></i> Exit / Drop-off
+          <button id="mode-exit-btn" class="direction-btn" onclick="setScanAction('EXIT')">
+            <i class="fa-solid fa-door-open"></i> Afternoon Exit
           </button>
         </div>
       </div>
@@ -286,7 +450,7 @@
     <!-- MAIN TWO-COLUMN WORKSPACE -->
     <div class="row g-4 justify-content-center">
 
-      <!-- LEFT COLUMN: ACTIVE VERIFICATION METHOD INTERFACE -->
+      <!-- LEFT COLUMN: ACTIVE VERIFICATION METHOD VIEWPORTS -->
       <div class="col-lg-7">
 
         <!-- ============================================================ -->
@@ -320,6 +484,24 @@
             </div>
             <span class="small text-muted" id="ai-face-count">Loading Face Directory...</span>
           </div>
+
+          <!-- Quick Demo Face Scan Simulator (For Instant Testing) -->
+          <div class="card p-3 border rounded-3 bg-white mb-3 shadow-sm">
+            <span class="small fw-bold text-dark d-block mb-2">
+              <i class="fa-solid fa-play text-primary me-1"></i> Quick Face Match Simulators (1-Click Test):
+            </span>
+            <div class="d-flex flex-wrap gap-2">
+              <button class="quick-test-chip" onclick="simCameraMatch('ROHAN-04')">
+                <i class="fa-solid fa-circle-check text-success me-1"></i> Scan Rohan Verma (Normal)
+              </button>
+              <button class="quick-test-chip" onclick="simWrongBusScan('ROHAN-04')">
+                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Scan Rohan (Wrong Bus Alert)
+              </button>
+              <button class="quick-test-chip" onclick="simCameraMatch('BEC26081')">
+                <i class="fa-solid fa-user-check text-primary me-1"></i> Scan Munu Nial (BEC26081)
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- ============================================================ -->
@@ -333,7 +515,7 @@
                   <i class="fa-solid fa-qrcode fa-lg"></i>
                 </div>
                 <div>
-                  <h6 class="fw-bold mb-0 text-dark">Method 2 — Student ID Card Scanner</h6>
+                  <h6 class="fw-bold mb-0 text-dark">Method 2 — Student ID Card Scanner (Backup)</h6>
                   <span class="small text-muted">Supports QR Code, Barcode & RFID/NFC Tag Scanners</span>
                 </div>
               </div>
@@ -343,7 +525,7 @@
             <!-- Card Input Box (For USB / Bluetooth Barcode Scanners or Manual Entry) -->
             <div class="mb-3">
               <label class="form-label small fw-bold text-secondary mb-1">
-                Scan ID Card or Tap RFID Tag:
+                Scan ID Card Token or Tap RFID Tag:
               </label>
               <div class="input-group input-group-lg">
                 <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-barcode"></i></span>
@@ -353,25 +535,27 @@
                 </button>
               </div>
               <span class="text-muted small mt-1 d-block" style="font-size: 0.78rem;">
-                Compatible with standard USB/Bluetooth handheld barcode guns, RFID USB readers, or physical ID cards.
+                Point your handheld barcode scanner gun, tap USB RFID reader, or type card ID directly.
               </span>
             </div>
 
             <!-- Quick Demo Simulation Buttons for Method 2 -->
             <div class="p-3 bg-light rounded-3 border mb-3">
-              <span class="small fw-bold text-dark d-block mb-2"><i class="fa-solid fa-flask text-primary me-1"></i> Quick Test Scenarios (Method 2 — ID Card):</span>
+              <span class="small fw-bold text-dark d-block mb-2">
+                <i class="fa-solid fa-flask text-primary me-1"></i> Quick Test Scenarios (Method 2 — ID Card):
+              </span>
               <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3" onclick="testCardScan('SC-CARD-ROH-7421')">
-                  <i class="fa-solid fa-qrcode me-1"></i> Scan Rohan Verma Card (Valid)
+                <button class="quick-test-chip border-success" onclick="testCardScan('SC-CARD-ROH-7421')">
+                  <i class="fa-solid fa-qrcode text-success me-1"></i> Rohan Verma Card (Valid)
                 </button>
-                <button class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3" onclick="testCardScan('E2-04-74-21')">
-                  <i class="fa-solid fa-nfc-directional me-1"></i> Tap Rohan RFID (E2-04-74-21)
+                <button class="quick-test-chip border-info" onclick="testCardScan('E2-04-74-21')">
+                  <i class="fa-solid fa-nfc-directional text-info me-1"></i> Rohan RFID Tap (E2-04-74-21)
                 </button>
-                <button class="btn btn-sm btn-outline-warning rounded-pill py-1 px-3" onclick="testWrongBusCardScan()">
-                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Scan Wrong Bus Card (Bus #1)
+                <button class="quick-test-chip border-warning" onclick="testWrongBusCardScan()">
+                  <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Wrong Bus Card Test (Bus #1)
                 </button>
-                <button class="btn btn-sm btn-outline-danger rounded-pill py-1 px-3" onclick="testCardScan('SC-CARD-REVOKED-999')">
-                  <i class="fa-solid fa-ban me-1"></i> Scan Revoked Card
+                <button class="quick-test-chip border-danger" onclick="testCardScan('SC-CARD-REVOKED-999')">
+                  <i class="fa-solid fa-ban text-danger me-1"></i> Revoked Card Test
                 </button>
               </div>
             </div>
@@ -412,7 +596,7 @@
                   <i class="fa-solid fa-clipboard-user fa-lg"></i>
                 </div>
                 <div>
-                  <h6 class="fw-bold mb-0 text-dark">Method 3 — Emergency Manual Verification</h6>
+                  <h6 class="fw-bold mb-0 text-dark">Method 3 — Emergency Manual Verification (Fallback)</h6>
                   <span class="small text-muted">Audited fallback when both camera & ID card hardware are unavailable</span>
                 </div>
               </div>
@@ -467,16 +651,17 @@
 
         <!-- UNIFIED RESULT CARD -->
         <div class="card-surface verification-card text-center mb-3" id="verification-card">
-          <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 72px; height: 72px;" id="status-icon-circle">
+          <!-- Standby Radar Icon -->
+          <div class="standby-radar" id="status-icon-circle">
             <i class="fa-solid fa-user-check fa-2x"></i>
           </div>
 
           <h4 class="fw-bold brand-font text-dark mb-1" id="scanned-name">Awaiting Student</h4>
-          <p class="text-muted small mb-2" id="scanned-roll">Stand in front of door camera or present ID card</p>
+          <p class="text-muted small mb-2" id="scanned-roll">Stand in front of door camera, tap RFID, or scan ID card</p>
 
           <!-- Verification Method Badge -->
           <div class="mb-3">
-            <span class="badge badge-method-face fw-bold px-3 py-1 rounded-pill" id="verification-method-badge">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1 rounded-pill" id="verification-method-badge">
               <i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION
             </span>
           </div>
@@ -599,7 +784,6 @@
           badge.className = 'badge bg-success-subtle text-success border border-success py-2 px-3 rounded-pill';
           text.innerText = 'Online';
           if (banner) banner.style.display = 'none';
-          // Auto-sync pending queue if any
           syncOfflineQueue();
         } else {
           badge.className = 'badge bg-warning-subtle text-warning border border-warning py-2 px-3 rounded-pill';
@@ -653,7 +837,6 @@
         });
         const data = await res.json();
         if (data.success) {
-          // Clear synced events
           saveOfflineQueue([]);
           alert(`✔ Offline Synchronisation Successful!\n${data.processed} offline events synced to server. Parents notified.`);
           await loadRoster();
@@ -668,9 +851,9 @@
     // =========================================================================
     function selectVerificationTab(tab) {
       currentTab = tab;
-      document.getElementById('tab-btn-face').className = tab === 'FACE' ? 'method-tab-btn active-tab' : 'method-tab-btn';
-      document.getElementById('tab-btn-card').className = tab === 'CARD' ? 'method-tab-btn active-tab' : 'method-tab-btn';
-      document.getElementById('tab-btn-manual').className = tab === 'MANUAL' ? 'method-tab-btn active-tab' : 'method-tab-btn';
+      document.getElementById('tab-btn-face').className = tab === 'FACE' ? 'method-tab-card active-tab' : 'method-tab-card';
+      document.getElementById('tab-btn-card').className = tab === 'CARD' ? 'method-tab-card active-tab' : 'method-tab-card';
+      document.getElementById('tab-btn-manual').className = tab === 'MANUAL' ? 'method-tab-card active-tab' : 'method-tab-card';
 
       document.getElementById('method-panel-face').style.display = tab === 'FACE' ? 'block' : 'none';
       document.getElementById('method-panel-card').style.display = tab === 'CARD' ? 'block' : 'none';
@@ -679,14 +862,14 @@
       // Update Method badge on result card
       const mBadge = document.getElementById('verification-method-badge');
       if (tab === 'FACE') {
-        mBadge.className = 'badge badge-method-face fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION';
       } else if (tab === 'CARD') {
-        mBadge.className = 'badge badge-method-card fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-id-card me-1"></i> METHOD: STUDENT ID CARD';
         setTimeout(() => document.getElementById('id-card-input')?.focus(), 200);
       } else {
-        mBadge.className = 'badge badge-method-manual fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-warning-subtle text-warning border border-warning-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-clipboard-user me-1"></i> METHOD: EMERGENCY MANUAL';
       }
 
@@ -700,14 +883,14 @@
       const label = document.getElementById('scan-mode-label');
 
       if (action === 'BOARD') {
-        bBtn.className = 'scan-mode-toggle-btn active-boarding';
-        eBtn.className = 'scan-mode-toggle-btn btn-light';
+        bBtn.className = 'direction-btn active-boarding';
+        eBtn.className = 'direction-btn';
         label.innerText = 'Morning Boarding (Entry)';
         label.className = 'text-success';
       } else {
-        eBtn.className = 'scan-mode-toggle-btn active-exit';
-        bBtn.className = 'scan-mode-toggle-btn btn-light';
-        label.innerText = 'Drop-Off Exit (Safe Deboard)';
+        eBtn.className = 'direction-btn active-exit';
+        bBtn.className = 'direction-btn';
+        label.innerText = 'Afternoon Exit (Drop-Off)';
         label.className = 'text-danger';
       }
     }
@@ -845,7 +1028,6 @@
 
       try { document.getElementById('audio-success').play(); } catch(e){}
 
-      // Grab snapshot photo
       let snapshotBase64 = '';
       try {
         const c = document.createElement('canvas');
@@ -858,7 +1040,6 @@
       const busId = document.getElementById('bus-terminal-select').value;
       const endpoint = currentAction === 'BOARD' ? '/api/bus/board' : '/api/bus/verify-exit';
 
-      // Check Offline Mode
       if (!navigator.onLine) {
         handleOfflineAttendance({
           student_id: student.student_id,
@@ -898,6 +1079,17 @@
       }
     }
 
+    // 1-Click Simulation Functions for testing
+    function simCameraMatch(roll) {
+      const student = enrolledStudents.find(s => s.roll_number === roll) || { name: 'Rohan Verma', roll_number: roll, student_id: 'STU-ROHAN' };
+      handleSuccessfulFaceMatch(student, document.getElementById('camera-feed'));
+    }
+
+    function simWrongBusScan(roll) {
+      document.getElementById('bus-terminal-select').value = '2'; // Bus #1
+      simCameraMatch(roll);
+    }
+
     // =========================================================================
     // METHOD 2: STUDENT ID CARD VERIFICATION (QR / BARCODE / RFID)
     // =========================================================================
@@ -917,7 +1109,6 @@
 
       const busId = document.getElementById('bus-terminal-select').value;
 
-      // Handle Offline
       if (!navigator.onLine) {
         const cachedStudent = findStudentInCachedRosterByCard(token);
         handleOfflineAttendance({
@@ -948,7 +1139,6 @@
         const data = await res.json();
 
         if (data.student) {
-          // Show visual preview container for attendant confirmation
           const prevBox = document.getElementById('card-preview-container');
           prevBox.style.display = 'block';
           document.getElementById('card-preview-name').innerText = data.student.name;
@@ -971,7 +1161,6 @@
     }
 
     function testWrongBusCardScan() {
-      // Rohan Verma (assigned to Bus #4) attempting on Bus #1
       document.getElementById('bus-terminal-select').value = '2'; // Bus #1
       testCardScan('SC-CARD-ROH-7421');
     }
@@ -1012,7 +1201,6 @@
         const data = await res.json();
         if (data.success && data.roster) {
           currentRoster = data.roster;
-          // Cache roster locally for offline access
           localStorage.setItem(`schoolsafe_cached_roster_bus_${busId}`, JSON.stringify(currentRoster));
           renderRosterTable(currentRoster);
         }
@@ -1086,7 +1274,6 @@
       const busId = document.getElementById('bus-terminal-select').value;
       const student = currentRoster.find(s => s.id === studentId || s.roll_number === rollNumber);
 
-      // Handle Offline
       if (!navigator.onLine) {
         handleOfflineAttendance({
           student_id: studentId,
@@ -1135,13 +1322,13 @@
       // Update Method Badge
       const mBadge = document.getElementById('verification-method-badge');
       if (method === 'FACE') {
-        mBadge.className = 'badge badge-method-face fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-camera me-1"></i> METHOD: FACE RECOGNITION';
       } else if (method === 'ID_CARD') {
-        mBadge.className = 'badge badge-method-card fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-id-card me-1"></i> METHOD: STUDENT ID CARD';
       } else {
-        mBadge.className = 'badge badge-method-manual fw-bold px-3 py-1 rounded-pill';
+        mBadge.className = 'badge bg-warning-subtle text-warning border border-warning-subtle fw-bold px-3 py-1 rounded-pill';
         mBadge.innerHTML = '<i class="fa-solid fa-clipboard-user me-1"></i> METHOD: EMERGENCY MANUAL';
       }
 
@@ -1255,7 +1442,6 @@
       offlineQueue.push(queueItem);
       saveOfflineQueue(offlineQueue);
 
-      // UI Update for offline recording
       document.getElementById('scanned-name').innerText = eventData.student_name || 'Student';
       document.getElementById('scanned-roll').innerText = `Roll: ${eventData.roll_number}`;
       document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

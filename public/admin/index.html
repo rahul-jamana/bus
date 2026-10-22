@@ -139,6 +139,53 @@
       transform: translateY(-1px);
     }
 
+    /* 30-Shot Multi-Angle Face Capture Styles */
+    .btn-gradient-burst {
+      background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+      color: #ffffff;
+      font-weight: 700;
+      border: none;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.28);
+      transition: all 0.25s ease;
+    }
+    .btn-gradient-burst:hover {
+      background: linear-gradient(135deg, #1e40af 0%, #0369a1 100%);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(29, 78, 216, 0.38);
+    }
+    .burst-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 5px;
+      padding: 8px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .burst-dot {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1.5px dashed #94a3b8;
+      background: #e2e8f0;
+      object-fit: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: #64748b;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .burst-dot.active {
+      border: 2px solid #059669;
+      background: #ffffff;
+      transform: scale(1.08);
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+    }
+
     .camera-container {
       position: relative;
       width: 100%;
@@ -513,7 +560,7 @@
               <span class="badge bg-primary rounded-pill px-3 py-2" id="ai-confidence-badge">0%</span>
             </div>
 
-            <div class="row g-2">
+            <div class="row g-2 mb-2">
               <div class="col-6">
                 <button type="button" class="btn btn-outline-primary w-100 py-2 rounded-3" onclick="startWebcam()">
                   <i class="fa-solid fa-video me-1"></i> Start Camera
@@ -526,15 +573,57 @@
               </div>
             </div>
 
+            <!-- PRIMARY 30-SHOT MULTI-ANGLE FACE CAPTURE ACTION -->
+            <button type="button" class="btn btn-gradient-burst w-100 py-2 rounded-3 fw-bold mb-3 shadow-sm d-flex align-items-center justify-content-center gap-2" id="btn-burst-30" onclick="start30ShotBurstCapture()">
+              <i class="fa-solid fa-camera-rotate fa-lg"></i>
+              <span>Auto-Capture 30 Face Angles (30 Photos)</span>
+            </button>
+
+            <!-- REALTIME 30-SHOT BURST PROGRESS & POSE GUIDANCE -->
+            <div id="burst-panel" class="p-3 bg-primary-subtle rounded-3 border border-primary-subtle mb-3" style="display: none;">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-bold text-primary d-flex align-items-center" id="burst-instruction">
+                  <i class="fa-solid fa-face-smile me-2"></i> Look Straight at Camera
+                </span>
+                <span class="badge bg-primary rounded-pill px-2 py-1 fw-bold" id="burst-counter">0 / 30</span>
+              </div>
+              <div class="progress mb-2" style="height: 8px;">
+                <div id="burst-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;"></div>
+              </div>
+              <!-- 30-Cell Realtime Matrix -->
+              <div class="burst-grid mb-2" id="burst-grid-container">
+                <!-- 30 dots populated dynamically -->
+              </div>
+              <div class="d-flex justify-content-between text-muted" style="font-size: 0.72rem;">
+                <span id="burst-angle-guide">Pose 1: Neutral Frontal Face</span>
+                <span class="fw-bold text-success" id="burst-status-text">Capturing at high speed...</span>
+              </div>
+            </div>
+
             <hr class="my-3">
 
             <!-- Enrolled Snapshot Preview -->
-            <div id="preview-box" class="p-3 bg-light rounded-3 border text-center mb-3" style="display: none;">
-              <span class="text-muted small d-block mb-2">Captured Face Sample:</span>
-              <img id="enrolled-preview-img" src="" class="rounded-circle border border-primary shadow-sm" style="width: 80px; height: 80px; object-fit: cover;">
-              <span class="badge bg-success-subtle text-success border border-success d-block mx-auto mt-2" style="width: max-content;">
-                <i class="fa-solid fa-check-circle me-1"></i> 128D Embeddings Ready
-              </span>
+            <div id="preview-box" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">Captured Face Profile:</span>
+                <span class="badge bg-success-subtle text-success border border-success" id="preview-sample-count-badge">
+                  <i class="fa-solid fa-check-circle me-1"></i> 30 Photos Captured
+                </span>
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+                <img id="enrolled-preview-img" src="" class="rounded-circle border border-primary shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
+                <div class="text-start">
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-block mb-1 text-center" id="preview-vector-badge">
+                    <i class="fa-solid fa-brain me-1"></i> 30x 128D AI Embeddings
+                  </span>
+                  <span class="small text-muted d-block" style="font-size: 0.72rem;">
+                    Multi-angle facial descriptors stored for sub-second recognition on school buses.
+                  </span>
+                </div>
+              </div>
+              <!-- Gallery of all 30 captured photos -->
+              <div class="small fw-semibold text-secondary text-uppercase mb-1" style="font-size: 0.68rem;">30 Enrolled Multi-Angle Samples:</div>
+              <div id="preview-mini-gallery" class="burst-grid" style="max-height: 90px;"></div>
             </div>
 
             <button type="button" class="btn btn-primary-blue w-100 py-3 fs-6" id="btn-save-student" onclick="submitStudentWithFace()">
@@ -1007,6 +1096,10 @@
     let enrolledDescriptors = [];
     let currentCapturedDescriptor = null;
     let currentSnapshotBase64 = null;
+    let capturedDescriptorsList = [];
+    let capturedImagesList = [];
+    let isBurstActive = false;
+    let burstInterval = null;
     let studentsData = [];
     let busesData = [];
     let leafletMap = null;
@@ -1154,6 +1247,23 @@
       }, 300);
     }
 
+    // Synthesize gentle capture audio feedback chime (No external audio file dependency)
+    function playCaptureChime(freq = 840) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e) {}
+    }
+
     function captureSnapshotPreview() {
       const video = document.getElementById('webcam-video');
       if (!video.srcObject) {
@@ -1166,9 +1276,183 @@
       c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
       currentSnapshotBase64 = c.toDataURL('image/jpeg', 0.85);
 
+      if (currentCapturedDescriptor) {
+        capturedDescriptorsList = [currentCapturedDescriptor];
+        capturedImagesList = [currentSnapshotBase64];
+      }
+
       document.getElementById('enrolled-preview-img').src = currentSnapshotBase64;
+      document.getElementById('preview-sample-count-badge').innerHTML = '<i class="fa-solid fa-check-circle me-1"></i> 1 Photo (Single Snapshot)';
+      document.getElementById('preview-vector-badge').innerHTML = '<i class="fa-solid fa-brain me-1"></i> 1x 128D AI Embedding';
+      document.getElementById('preview-mini-gallery').innerHTML = `<img src="${currentSnapshotBase64}" class="burst-dot active" style="width: 38px; height: 38px;">`;
       document.getElementById('preview-box').style.display = 'block';
-      showToast('Snapshot captured successfully!');
+      showToast('Single snapshot captured! Tip: Use 30-Shot Auto-Capture for highest accuracy.');
+    }
+
+    // 30-Shot Multi-Angle Continuous Face Enrollment Engine
+    async function start30ShotBurstCapture() {
+      const video = document.getElementById('webcam-video');
+      if (!webcamStream || !video.srcObject) {
+        await startWebcam();
+        showToast('Webcam started. Please face the camera!');
+        await new Promise(r => setTimeout(r, 800));
+      }
+
+      if (!isModelLoaded) {
+        alert('Face AI neural models are still initializing. Please wait a moment...');
+        return;
+      }
+
+      const burstPanel = document.getElementById('burst-panel');
+      const burstBar = document.getElementById('burst-progress-bar');
+      const burstCounter = document.getElementById('burst-counter');
+      const burstInstruction = document.getElementById('burst-instruction');
+      const burstAngleGuide = document.getElementById('burst-angle-guide');
+      const burstStatusText = document.getElementById('burst-status-text');
+      const gridContainer = document.getElementById('burst-grid-container');
+
+      burstPanel.style.display = 'block';
+      burstBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+      burstBar.style.width = '0%';
+      burstCounter.innerText = '0 / 30';
+      burstStatusText.innerText = 'Capturing at high speed...';
+
+      // Pre-fill 30 blank placeholder cells
+      gridContainer.innerHTML = '';
+      for (let i = 0; i < 30; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.id = `burst-cell-${i}`;
+        placeholder.className = 'burst-dot';
+        placeholder.innerText = `${i + 1}`;
+        gridContainer.appendChild(placeholder);
+      }
+
+      capturedDescriptorsList = [];
+      capturedImagesList = [];
+      let count = 0;
+      isBurstActive = true;
+
+      const btnBurst = document.getElementById('btn-burst-30');
+      btnBurst.disabled = true;
+      btnBurst.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Capturing 30 Multi-Angle Photos...';
+
+      // 5 Realistic Angular Directions for Deep AI Tolerance
+      const poses = [
+        { max: 6, text: '<i class="fa-solid fa-face-smile me-2"></i> Look Straight at Camera 😐', guide: 'Angle 1/5: Straight Frontal Face' },
+        { max: 12, text: '<i class="fa-solid fa-arrow-left me-2"></i> Turn head slightly Left 👈', guide: 'Angle 2/5: Left Cheek Profile' },
+        { max: 18, text: '<i class="fa-solid fa-arrow-right me-2"></i> Turn head slightly Right 👉', guide: 'Angle 3/5: Right Cheek Profile' },
+        { max: 24, text: '<i class="fa-solid fa-arrow-up me-2"></i> Tilt chin slightly Up / Down 👆', guide: 'Angle 4/5: Vertical Pitch' },
+        { max: 30, text: '<i class="fa-solid fa-face-laugh-beam me-2"></i> Natural Smile / Expression 😊', guide: 'Angle 5/5: Dynamic Expression' }
+      ];
+
+      burstInterval = setInterval(async () => {
+        if (!isBurstActive) {
+          clearInterval(burstInterval);
+          return;
+        }
+
+        if (count >= 30) {
+          clearInterval(burstInterval);
+          finish30Burst();
+          return;
+        }
+
+        if (!video.videoWidth || video.paused || video.ended) return;
+
+        try {
+          const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+          if (detection && detection.detection.score >= 0.55) {
+            const currentPose = poses.find(p => count < p.max) || poses[poses.length - 1];
+            burstInstruction.innerHTML = currentPose.text;
+            burstAngleGuide.innerText = currentPose.guide;
+
+            // Extract 128D AI descriptor vector
+            const desc = Array.from(detection.descriptor);
+            capturedDescriptorsList.push(desc);
+
+            // Crop clean face thumbnail
+            const c = document.createElement('canvas');
+            c.width = 160;
+            c.height = 160;
+            const ctx = c.getContext('2d');
+            const box = detection.detection.box;
+            const pad = box.width * 0.20;
+            ctx.drawImage(
+              video,
+              Math.max(0, box.x - pad),
+              Math.max(0, box.y - pad),
+              box.width + pad * 2,
+              box.height + pad * 2,
+              0, 0, 160, 160
+            );
+            const thumbBase64 = c.toDataURL('image/jpeg', 0.85);
+            capturedImagesList.push(thumbBase64);
+
+            // If first or best front frame, also grab full frame as primary avatar
+            if (count === 0 || count === 3) {
+              const fullC = document.createElement('canvas');
+              fullC.width = video.videoWidth || 640;
+              fullC.height = video.videoHeight || 480;
+              fullC.getContext('2d').drawImage(video, 0, 0, fullC.width, fullC.height);
+              currentSnapshotBase64 = fullC.toDataURL('image/jpeg', 0.85);
+              currentCapturedDescriptor = desc;
+            }
+
+            // Replace cell with live image
+            const cell = document.getElementById(`burst-cell-${count}`);
+            if (cell) {
+              const img = document.createElement('img');
+              img.src = thumbBase64;
+              img.className = 'burst-dot active';
+              img.title = `Photo #${count + 1} (${currentPose.guide})`;
+              cell.replaceWith(img);
+            }
+
+            count++;
+            burstCounter.innerText = `${count} / 30`;
+            burstBar.style.width = `${Math.round((count / 30) * 100)}%`;
+            playCaptureChime(700 + count * 18);
+          } else {
+            burstStatusText.innerText = 'Adjusting... please hold head inside camera frame';
+          }
+        } catch (err) {
+          console.warn('Burst capture tick error:', err);
+        }
+      }, 110);
+
+      function finish30Burst() {
+        isBurstActive = false;
+        btnBurst.disabled = false;
+        btnBurst.innerHTML = '<i class="fa-solid fa-camera-rotate fa-lg me-2"></i><span>Re-Capture 30 Face Angles</span>';
+
+        burstInstruction.innerHTML = '<i class="fa-solid fa-circle-check text-success me-2"></i> All 30 Face Samples Enrolled!';
+        burstStatusText.innerText = '30 Samples Ready to Save!';
+        burstBar.className = 'progress-bar bg-success';
+        burstBar.style.width = '100%';
+
+        // Populate Preview Box
+        const previewBox = document.getElementById('preview-box');
+        const previewImg = document.getElementById('enrolled-preview-img');
+        const countBadge = document.getElementById('preview-sample-count-badge');
+        const vectorBadge = document.getElementById('preview-vector-badge');
+        const miniGallery = document.getElementById('preview-mini-gallery');
+
+        previewImg.src = currentSnapshotBase64 || capturedImagesList[0];
+        countBadge.innerHTML = `<i class="fa-solid fa-check-circle me-1"></i> ${capturedImagesList.length} Photos Captured`;
+        vectorBadge.innerHTML = `<i class="fa-solid fa-brain me-1"></i> ${capturedDescriptorsList.length}x 128D AI Embeddings`;
+
+        miniGallery.innerHTML = '';
+        capturedImagesList.forEach((b64, idx) => {
+          const mImg = document.createElement('img');
+          mImg.src = b64;
+          mImg.className = 'burst-dot';
+          mImg.title = `Photo #${idx + 1}`;
+          miniGallery.appendChild(mImg);
+        });
+
+        previewBox.style.display = 'block';
+        showToast('30 multi-angle face photos captured! Click "Save Student & Enroll Face Data".');
+      }
     }
 
     // 4. Save Student & Face Data
@@ -1189,14 +1473,24 @@
         return;
       }
 
-      // If user hasn't snapped preview yet, grab snapshot from webcam
-      if (!currentSnapshotBase64) {
-        captureSnapshotPreview();
+      // If user hasn't captured 30 photos yet
+      let finalDescriptors = capturedDescriptorsList.length > 0 ? capturedDescriptorsList : (currentCapturedDescriptor ? [currentCapturedDescriptor] : []);
+      let finalImages = capturedImagesList.length > 0 ? capturedImagesList : (currentSnapshotBase64 ? [currentSnapshotBase64] : []);
+
+      if (finalDescriptors.length === 0) {
+        if (webcamStream) {
+          const autoConfirm = confirm('Face pictures not captured yet. Would you like to auto-capture 30 face angles now for high-accuracy recognition?');
+          if (autoConfirm) {
+            await start30ShotBurstCapture();
+            return;
+          }
+        }
+        // Fallback descriptor if no camera available
+        finalDescriptors = [Array.from({ length: 128 }, () => (Math.random() * 2 - 1))];
       }
 
-      // If no AI descriptor yet, generate dummy 128D vector fallback
-      if (!currentCapturedDescriptor) {
-        currentCapturedDescriptor = Array.from({ length: 128 }, () => (Math.random() * 2 - 1));
+      if (!currentSnapshotBase64 && finalImages.length > 0) {
+        currentSnapshotBase64 = finalImages[0];
       }
 
       const payload = {
@@ -1211,14 +1505,15 @@
         address: address,
         bus_id: busId,
         stop_name: stopName,
-        descriptors: [currentCapturedDescriptor],
+        descriptors: finalDescriptors, // Saves ALL 30 descriptors into database
+        sample_images: finalImages,    // Saves ALL 30 photos onto disk
         sample_image_base64: currentSnapshotBase64
       };
 
       try {
         const btn = document.getElementById('btn-save-student');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Registering in Database...';
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Registering ${finalDescriptors.length} Face Vectors...`;
 
         const res = await fetch('/api/face/enroll', {
           method: 'POST',
@@ -1228,11 +1523,14 @@
         const data = await res.json();
 
         if (data.success) {
-          showToast(`Student ${name} successfully enrolled with Biometric Face AI!`);
+          showToast(`Student ${name} successfully enrolled with ${finalDescriptors.length} Biometric Face Photos!`);
           document.getElementById('student-register-form').reset();
           document.getElementById('preview-box').style.display = 'none';
+          document.getElementById('burst-panel').style.display = 'none';
           currentSnapshotBase64 = null;
           currentCapturedDescriptor = null;
+          capturedDescriptorsList = [];
+          capturedImagesList = [];
           await loadStudents();
           await loadStats();
           switchTab('directory-tab');
