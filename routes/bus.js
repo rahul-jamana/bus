@@ -1967,8 +1967,11 @@ router.get('/parent-track/:query', async (req, res) => {
       [student.id, `%${student.parent_mobile || student.mobile}%`]
     );
 
-    // Stops
-    const stops = bus ? await dbQuery('SELECT * FROM bus_routes WHERE route_name = ? ORDER BY stop_order ASC', [bus.route_name]) : [];
+    // Stops with live GPS coordinates & sequences
+    let stops = bus ? await dbQuery('SELECT * FROM bus_stops WHERE route_name = ? OR route_id = 1 ORDER BY stop_sequence ASC, id ASC', [bus.route_name]) : [];
+    if (stops.length === 0) {
+      stops = await dbQuery('SELECT * FROM bus_routes WHERE route_name = ? ORDER BY stop_order ASC', [bus ? bus.route_name : 'Khordha']);
+    }
 
     res.json({
       success: true,

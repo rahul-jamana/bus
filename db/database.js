@@ -924,13 +924,19 @@ async function initDatabase() {
         // ==============================================================================
         // SafeRide AI — Seed Configurable Bus Stops & Historical Segments
         // ==============================================================================
-        const existingStops = await dbGet('SELECT COUNT(*) as count FROM bus_stops');
-        if (existingStops.count === 0) {
+        const existingStops = await dbGet('SELECT COUNT(*) as count FROM bus_stops WHERE stop_name = "Khandagiri Square"');
+        if (!existingStops || existingStops.count === 0) {
+          await dbRun('DELETE FROM bus_stops WHERE route_id = 1');
           const stopsSeed = [
-            [1, 'Khordha', 'BEC Campus Gate', 1, 20.1782, 85.7061, 500, '07:00 AM', '04:00 PM'],
-            [1, 'Khordha', 'Khordha Bypass', 2, 20.1875, 85.6214, 500, '07:30 AM', '04:20 PM'],
-            [1, 'Khordha', 'Pitapalli Square', 3, 20.2105, 85.6702, 500, '07:45 AM', '04:40 PM'],
-            [1, 'Khordha', 'Master Canteen', 4, 20.2648, 85.8398, 500, '08:15 AM', '05:05 PM']
+            [1, 'Khordha', 'Khandagiri Square', 1, 20.2605, 85.7860, 500, '07:15 AM', '04:05 PM'],
+            [1, 'Khordha', 'Kolathia 1', 2, 20.2480, 85.7720, 500, '07:22 AM', '04:12 PM'],
+            [1, 'Khordha', 'Aiginia 1', 3, 20.2385, 85.7595, 500, '07:28 AM', '04:18 PM'],
+            [1, 'Khordha', 'Alu Godam', 4, 20.2320, 85.7510, 500, '07:34 AM', '04:24 PM'],
+            [1, 'Khordha', 'Patrapada 1', 5, 20.2245, 85.7410, 500, '07:40 AM', '04:30 PM'],
+            [1, 'Khordha', 'K9', 6, 20.2180, 85.7280, 500, '07:46 AM', '04:36 PM'],
+            [1, 'Khordha', 'Pitapalli Square', 7, 20.2105, 85.6702, 500, '07:55 AM', '04:45 PM'],
+            [1, 'Khordha', 'Khordha Bypass', 8, 20.1875, 85.6214, 500, '08:08 AM', '04:58 PM'],
+            [1, 'Khordha', 'Khordha New Bus Stand', 9, 20.1782, 85.6061, 500, '08:20 AM', '05:15 PM']
           ];
           for (const st of stopsSeed) {
             await dbRun(
@@ -938,15 +944,21 @@ async function initDatabase() {
               st
             );
           }
-          console.log('Seeded 4 SafeRide AI configurable bus stops with 500m geofence');
+          console.log('Seeded 9 SafeRide AI configurable bus stops with 500m geofence along NH-16 corridor');
         }
 
-        const existingSegments = await dbGet('SELECT COUNT(*) as count FROM trip_segment_history');
-        if (existingSegments.count === 0) {
+        const existingSegments = await dbGet('SELECT COUNT(*) as count FROM trip_segment_history WHERE from_stop_name = "Khandagiri Square"');
+        if (!existingSegments || existingSegments.count === 0) {
+          await dbRun('DELETE FROM trip_segment_history WHERE route_id = 1');
           const segmentsSeed = [
-            [1, 1, 'BEC Campus Gate', 2, 'Khordha Bypass', 1200, 20, 34.5],
-            [1, 2, 'Khordha Bypass', 3, 'Pitapalli Square', 1200, 22, 31.0],
-            [1, 3, 'Pitapalli Square', 4, 'Master Canteen', 1500, 18, 33.2]
+            [1, 1, 'Khandagiri Square', 2, 'Kolathia 1', 420, 20, 32.0],
+            [1, 2, 'Kolathia 1', 3, 'Aiginia 1', 360, 22, 30.5],
+            [1, 3, 'Aiginia 1', 4, 'Alu Godam', 360, 25, 28.0],
+            [1, 4, 'Alu Godam', 5, 'Patrapada 1', 360, 20, 29.0],
+            [1, 5, 'Patrapada 1', 6, 'K9', 360, 22, 34.0],
+            [1, 6, 'K9', 7, 'Pitapalli Square', 540, 20, 36.5],
+            [1, 7, 'Pitapalli Square', 8, 'Khordha Bypass', 780, 24, 38.0],
+            [1, 8, 'Khordha Bypass', 9, 'Khordha New Bus Stand', 600, 20, 35.0]
           ];
           for (const seg of segmentsSeed) {
             await dbRun(
@@ -954,7 +966,7 @@ async function initDatabase() {
               seg
             );
           }
-          console.log('Seeded historical trip segments for AI delay prediction');
+          console.log('Seeded historical trip segments for AI delay prediction on NH-16');
         }
 
         // ==============================================================================
