@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeRide AI — Stop-Level Custody Reconciliation (Live Real Data)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.25);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.3);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.25);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-radius: 16px;
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 20%, #0d1527 0%, #060911 90%);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .brand h1 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand span {
+      color: #60a5fa;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .status-badge.live {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .view-container {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       LEAFLET CUSTOM MAP STYLES (Matching User's Real Reference Screenshot)
+       ========================================================================== */
+    .bus-leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .custom-bus-marker {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .bus-icon-container {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      border: 2.5px solid #0f172a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.5), 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 2;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .custom-bus-marker:hover .bus-icon-container {
+      transform: scale(1.1);
+    }
+
+    .bus-marker-pulse {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid #f59e0b;
+      animation: busPulse 2s infinite ease-out;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    @keyframes busPulse {
+      0% { transform: scale(0.85); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .bus-marker-label {
+      background: #0f172a;
+      color: #fbbf24;
+      font-size: 0.65rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      padding: 1px 7px;
+      border-radius: 9999px;
+      margin-top: -5px;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      z-index: 3;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+
+    /* Map Circular Stop Nodes */
+    .map-stop-node {
+      width: 12px;
+      height: 12px;
+      background: #ffffff;
+      border: 3px solid #0f172a;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .map-stop-node:hover {
+      transform: scale(1.3);
+    }
+
+    .map-stop-node.child-stop {
+      width: 18px;
+      height: 18px;
+      background: #1d4ed8;
+      border: 3.5px solid #ffffff;
+      box-shadow: 0 0 0 2px #1d4ed8, 0 3px 10px rgba(29, 78, 216, 0.6);
+      animation: childStopGlow 1.6s infinite alternate;
+    }
+
+    @keyframes childStopGlow {
+      0% { box-shadow: 0 0 0 2px #1d4ed8, 0 2px 6px rgba(29, 78, 216, 0.4); }
+      100% { box-shadow: 0 0 0 4px #1d4ed8, 0 4px 14px rgba(29, 78, 216, 0.8); }
+    }
+
+    .leaflet-container {
+      font-family: var(--font-body);
+      background: #1e293b;
+    }
+
+    /* BUS DEVICE SCREEN */
+    .bus-device-frame {
+      max-width: 880px;
+      margin: 0 auto;
+      background: #111827;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .device-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .strict-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #374151;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--danger);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* STOP SELECTOR BAR */
+    .stop-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stop-nav-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stop-select-input {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 14px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* BIG STOP BANNER */
+    .big-stop-banner {
+      background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(30, 58, 138, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .banner-main h2 {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #93c5fd;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .banner-main p {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      max-width: 620px;
+      line-height: 1.4;
+    }
+
+    .banner-badge {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 16px;
+      border-radius: 12px;
+      text-align: right;
+    }
+
+    .banner-badge .label {
+      font-size: 0.75rem;
+      color: #93c5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .banner-badge .value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* RED BLOCKING ALERT */
+    .blocking-alert-banner {
+      display: none;
+      background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+      border: 2px solid #ef4444;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      animation: alertPulse 1.5s infinite alternate;
+    }
+
+    @keyframes alertPulse {
+      from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+      to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); }
+    }
+
+    .blocking-alert-banner.active {
+      display: block;
+    }
+
+    .alert-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .alert-icon {
+      font-size: 1.8rem;
+    }
+
+    .alert-title {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fca5a5;
+    }
+
+    .alert-desc {
+      font-size: 0.95rem;
+      color: #fee2e2;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .alert-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .btn-action {
+      border: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-in-bus {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #475569;
+    }
+
+    .btn-in-bus:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .btn-exited {
+      background: #065f46;
+      color: #a7f3d0;
+      border: 1px solid #059669;
+    }
+
+    .btn-exited:hover {
+      background: #047857;
+      color: #fff;
+    }
+
+    .btn-override {
+      background: #991b1b;
+      color: #fecaca;
+      border: 1px solid #dc2626;
+    }
+
+    .btn-override:hover {
+      background: #b91c1c;
+      color: #fff;
+    }
+
+    /* CHECKLIST */
+    .checklist-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .checklist-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .student-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+
+    .student-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .student-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .student-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #1e293b;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .student-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .student-class {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .status-pill.cleared {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-pill.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* SIMULATION CONTROLS */
+    .sim-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 20px;
+    }
+
+    .btn-sim {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #e5e7eb;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-sim:hover {
+      background: #374151;
+      color: #fff;
+    }
+
+    .btn-sim.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn-sim.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-sim.danger {
+      background: #b91c1c;
+      border-color: #dc2626;
+      color: #fff;
+    }
+
+    .btn-sim.danger:hover {
+      background: #991b1b;
+    }
+
+    /* SCHOOL DASHBOARD */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .dash-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--border-radius);
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .dash-title {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* INCIDENT QUEUE */
+    .incident-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .incident-table th {
+      text-align: left;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--card-border);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .incident-table td {
+      padding: 12px;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .sla-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-resolve-sm {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-resolve-sm:hover {
+      background: #1d4ed8;
+    }
+
+    /* PARENT APP VIEW */
+    .parent-phone-frame {
+      max-width: 460px;
+      margin: 0 auto;
+      background: #0f172a;
+      border: 3px solid #334155;
+      border-radius: 36px;
+      padding: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+
+    .parent-header {
+      text-align: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+    }
+
+    .parent-header h3 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .parent-header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .student-select-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .p-tab {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .p-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .parent-status-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .parent-status-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .parent-status-icon.cleared {
+      background: rgba(16, 185, 129, 0.2);
+      border: 2px solid #10b981;
+      color: #34d399;
+    }
+
+    .parent-status-icon.pending {
+      background: rgba(245, 158, 11, 0.2);
+      border: 2px solid #f59e0b;
+      color: #fbbf24;
+    }
+
+    .parent-status-badge {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      font-family: var(--font-heading);
+    }
+
+    .parent-status-badge.cleared {
+      color: #34d399;
+    }
+
+    .parent-status-badge.pending {
+      color: #fbbf24;
+    }
+
+    .parent-status-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #111827;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    textarea.form-control {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h1>SafeRide AI <span>Stop Custody Reconciliation</span></h1>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchView('bus-screen')">
+        📱 Bus Device
+      </button>
+      <button class="tab-btn" onclick="switchView('school-dashboard')">
+        🏫 School Dashboard
+      </button>
+      <button class="tab-btn" onclick="switchView('parent-app')">
+        👨‍👩‍👧 Parent Portal
+      </button>
+    </div>
+
+    <div class="status-badge live">
+      <div class="live-dot"></div> Live Telemetry Active
+    </div>
+  </header>
+
+  <main>
+    <!-- =========================================================================
+         VIEW 1: BUS DEVICE SCREEN
+         ========================================================================= -->
+    <div id="view-bus-screen" class="view-container active">
+      <div class="bus-device-frame">
+        <div class="device-header">
+          <div class="device-title">
+            <span>🚌 Bus #4 — Khordha Route</span>
+            <span style="font-size: 0.85rem; color: #94a3b8;">Trip #102 | Driver: Ramesh Kumar | Attendant: Hari Das</span>
+          </div>
+          <div class="strict-toggle">
+            <span>Strict Mode</span>
+            <label class="switch">
+              <input type="checkbox" id="strictModeToggle" onchange="toggleStrictMode(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- REAL STOP LOCATION SWITCHER -->
+        <div class="stop-nav-bar">
+          <span class="stop-nav-label">📍 Active Stop Geofence (Click to Change or Select on Map):</span>
+          <select id="stopSelector" class="stop-select-input" onchange="onStopChange(this.value)">
+            <!-- Populated dynamically with real stops -->
+          </select>
+        </div>
+
+        <!-- REAL LEAFLET MAP (Bus Device View) -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 16px; padding: 12px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+              <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 1.5s infinite;"></span>
+              Live Geofence Radar & NH-16 Bus Corridor
+            </span>
+            <span style="font-size: 0.75rem; color: #60a5fa; font-weight: 600;">500m Auto-Geofence Circle</span>
+          </div>
+          <div id="bus-device-map" style="height: 240px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);"></div>
+        </div>
+
+        <!-- BIG STOP BANNER (Required: Big banner "STOP X — Drop: Name1, Name2...") -->
+        <div class="big-stop-banner" id="bigStopBanner">
+          <div class="banner-main">
+            <h2 id="bannerStopTitle">STOP 7 — Pitapalli Square</h2>
+            <p id="bannerDropList">Loading real students for this stop...</p>
+          </div>
+          <div class="banner-badge">
+            <div class="label">Expected Drops</div>
+            <div class="value" id="expectedDropCount">0</div>
+          </div>
+        </div>
+
+        <!-- RED BLOCKING ALERT (Required: Red blocking alert on departure with pending names + 3 action buttons) -->
+        <div class="blocking-alert-banner" id="blockingAlertBanner">
+          <div class="alert-header">
+            <div class="alert-icon">⚠️</div>
+            <div>
+              <div class="alert-title">DEPARTURE BLOCKED: PENDING DROP-OFF DETECTED</div>
+              <div class="alert-desc" id="blockingAlertNames">
+                Bus cannot depart. Pending exit verification for: <strong>...</strong>
+              </div>
+            </div>
+          </div>
+          <div class="alert-actions">
+            <button class="btn-action btn-in-bus" onclick="resolveAction('VERIFIED_IN_BUS')">
+              👁️ "Verified in bus"
+            </button>
+            <button class="btn-action btn-exited" onclick="resolveAction('VERIFIED_EXITED_MANUAL')">
+              ✅ "Verified exited (record missed)"
+            </button>
+            <button class="btn-action btn-override" onclick="openOverrideModal()">
+              🛡️ "Authorised override"
+            </button>
+          </div>
+        </div>
+
+        <!-- CHECKLIST (Required: Checklist with ✅ / ⏳ per name) -->
+        <div class="checklist-card">
+          <div class="checklist-title">
+            <span id="manifestStopHeader">Expected Drop-Off Manifest</span>
+            <span id="manifestClearedSummary" style="font-size: 0.8rem; color: #34d399;">0 / 0 Verified</span>
+          </div>
+
+          <div id="studentChecklistContainer">
+            <!-- Rendered dynamically from real database students -->
+          </div>
+        </div>
+
+        <!-- HARDWARE SCAN & GEOFENCE SIMULATION CONTROLS -->
+        <div class="sim-controls">
+          <button class="btn-sim primary" onclick="simulateScanFirst('FACE')">
+            📸 Scan Next Student (Face)
+          </button>
+          <button class="btn-sim" onclick="simulateScanFirst('QR')">
+            🔲 Scan Next Student (QR)
+          </button>
+          <button class="btn-sim" onclick="openManualScanModal()">
+            ✍️ Manual Verification (Reason)
+          </button>
+          <button class="btn-sim danger" onclick="triggerDepartStop()">
+            🚨 Bus Depart Stop
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 2: SCHOOL DASHBOARD
+         ========================================================================= -->
+    <div id="view-school-dashboard" class="view-container">
+      <div class="dashboard-grid">
+        <!-- Live Real Map Card (Matching User Screenshot) -->
+        <div class="dash-card">
+          <div class="dash-title">
+            <span style="display: flex; align-items: center; gap: 10px;">
+              🗺️ NH-16 Khordha Bus Corridor — Real-Time Fleet Geofence & Stop Tracking
+            </span>
+            <span class="status-badge live"><div class="live-dot"></div> TELEMETRY ACTIVE (35 km/h)</span>
+          </div>
+          
+          <!-- Full Real Leaflet OpenStreetMap -->
+          <div id="dashboard-leaflet-map" style="height: 380px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px;"></div>
+
+          <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: rgba(255,255,255,0.02); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--card-border);">
+            <div><span style="color:var(--text-muted); font-size:0.8rem;">Corridor:</span> <strong style="font-size:0.9rem; display:block;">NH-16 Khordha – Bhubaneswar</strong></div>
+            <div><span style="color:var(--text-muted); font-size:0.8rem;">Active Vehicle:</span> <strong style="font-size:0.9rem; color:#fbbf24; display:block;">Bus #4 (OD-02-X-1024)</strong></div>
+            <div><span style="color:var(--text-muted); font-size:0.8rem;">Current Target Stop:</span> <strong id="dashTargetStopText" style="font-size:0.9rem; color:#60a5fa; display:block;">Pitapalli Square</strong></div>
+            <div><span style="color:var(--text-muted); font-size:0.8rem;">Reconciliation Engine:</span> <strong style="font-size:0.9rem; color:#34d399; display:block;">8ms SLA (&lt; 500ms)</strong></div>
+          </div>
+        </div>
+
+        <!-- Incident Queue with SLA Timer (Required) -->
+        <div class="dash-card">
+          <div class="dash-title">
+            <span>Live Incident Queue</span>
+            <span id="incidentCountBadge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; font-weight: 700;">
+              0 OPEN
+            </span>
+          </div>
+
+          <table class="incident-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Stop</th>
+                <th>Time</th>
+                <th>Assigned To</th>
+                <th>SLA Timer</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="incidentTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 3: PARENT APP
+         ========================================================================= -->
+    <div id="view-parent-app" class="view-container">
+      <div class="parent-phone-frame">
+        <div class="parent-header">
+          <h3>SafeRide Guardian</h3>
+          <p>Live Real-Time Child Custody Verification</p>
+        </div>
+
+        <div class="student-select-tabs" id="parentStudentTabs">
+          <!-- Populated dynamically with real students from database -->
+        </div>
+
+        <!-- Real Leaflet Map on Parent App Phone Frame -->
+        <div style="margin-bottom: 16px;">
+          <div id="parent-leaflet-map" style="height: 220px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);"></div>
+        </div>
+
+        <div class="parent-status-card">
+          <div class="parent-status-icon cleared" id="parentStatusIcon">
+            ✓
+          </div>
+          <div class="parent-status-badge cleared" id="parentStatusBadge">
+            Exited at Stop — verified
+          </div>
+          <div class="parent-status-sub" id="parentStatusSub">
+            Child safely dropped and verified by bus attendant.
+          </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border-radius: 14px; padding: 14px; font-size: 0.85rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted);">Assigned Bus:</span>
+            <strong>Bus #4 (Khordha Route)</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted);">Assigned Drop Stop:</span>
+            <strong id="parentAssignedStopName">Pitapalli Square</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">Attendant Contact:</span>
+            <strong style="color: #60a5fa;">Hari Das (+91 98765-43210)</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- REASON RESOLUTION MODAL -->
+  <div class="modal-overlay" id="reasonModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Attendant Resolution</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label>Selected Student</label>
+        <input type="text" class="form-control" id="modalStudentName" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>Mandatory Audit Reason (min 5 characters)</label>
+        <textarea class="form-control" id="modalReasonText" placeholder="e.g. Parent confirmed direct pickup at gate; QR scanner unreadable..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-action btn-in-bus" onclick="closeModal()">Cancel</button>
+        <button class="btn-action btn-exited" id="modalSubmitBtn" onclick="submitModalResolution()">Submit Resolution</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TRIP_ID = 102; // Real active trip
+    let allRealStops = [];
+    let allRealExpectedDrops = [];
+    let currentSelectedStopId = null;
+    let isStrictMode = false;
+
+    // Student custody states for active stop: { id, name, roll_number, class, exited, method, pending }
+    let activeStopStudents = [];
+    let activeParentStudentId = null;
+    let pendingModalStudentId = null;
+    let currentModalAction = null;
+
+    // Map instances & layer trackers
+    let mapDevice = null;
+    let mapDash = null;
+    let mapParent = null;
+
+    let markerBusDevice = null;
+    let markerBusDash = null;
+    let markerBusParent = null;
+
+    let circleGeofenceDevice = null;
+    let circleGeofenceDash = null;
+    let circleGeofenceParent = null;
+
+    let stopMarkersDevice = [];
+    let stopMarkersDash = [];
+    let stopMarkersParent = [];
+
+    // Current bus GPS position (Khordha corridor, near Pitapalli Square)
+    const currentBusGPS = {
+      lat: 20.2105,
+      lng: 85.6702,
+      busNumber: 'Bus #4',
+      speed: 35
+    };
+
+    async function initRealData() {
+      try {
+        // 1. Fetch real stops from backend API
+        const stopRes = await fetch('/api/reconciliation/stops');
+        const stopData = await stopRes.json();
+        allRealStops = stopData.stops || [];
+
+        // 2. Fetch real expected drops from backend API
+        const dropsRes = await fetch('/api/reconciliation/expected-drops');
+        const dropsData = await dropsRes.json();
+        allRealExpectedDrops = dropsData.expected_drops || [];
+
+        // 3. Render real stop selector
+        const selector = document.getElementById('stopSelector');
+        selector.innerHTML = '';
+        allRealStops.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = `Stop ${s.sequence}: ${s.name}`;
+          selector.appendChild(opt);
+        });
+
+        // Default to Pitapalli Square (Stop 7) or first stop
+        const pitapalli = allRealStops.find(s => s.name.includes('Pitapalli')) || allRealStops[0];
+        currentSelectedStopId = pitapalli ? pitapalli.id : (allRealStops[0] ? allRealStops[0].id : 1);
+        selector.value = currentSelectedStopId;
+
+        // 4. Load students for selected stop
+        loadStopStudents(currentSelectedStopId);
+
+        // 5. Setup parent portal real students
+        setupParentPortalStudents();
+
+        // 6. Initialize Real Leaflet Maps across views
+        initAllMaps();
+
+        // 7. Load any live incidents from backend
+        fetchLiveIncidents();
+      } catch (err) {
+        console.error('Error initializing real data:', err);
+      }
+    }
+
+    // =========================================================================
+    // MAP INITIALIZATION & RENDERING (Leaflet OpenStreetMap)
+    // =========================================================================
+    function createBusMarkerIcon(busLabel = 'Bus #4') {
+      return L.divIcon({
+        html: `
+          <div class="custom-bus-marker">
+            <div class="bus-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="#0f172a">
+                <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
+              </svg>
+            </div>
+            <div class="bus-marker-pulse"></div>
+            <div class="bus-marker-label">${busLabel}</div>
+          </div>
+        `,
+        className: 'bus-leaflet-div-icon',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+      });
+    }
+
+    function initAllMaps() {
+      // 1. Bus Device Screen Map
+      if (!mapDevice && document.getElementById('bus-device-map')) {
+        mapDevice = L.map('bus-device-map', { zoomControl: true }).setView([currentBusGPS.lat, currentBusGPS.lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(mapDevice);
+        renderMapLayers(mapDevice, 'device');
+      }
+
+      // 2. School Dashboard Map
+      if (!mapDash && document.getElementById('dashboard-leaflet-map')) {
+        mapDash = L.map('dashboard-leaflet-map', { zoomControl: true }).setView([20.2245, 85.7410], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(mapDash);
+        renderMapLayers(mapDash, 'dash');
+      }
+
+      // 3. Parent Portal Map
+      if (!mapParent && document.getElementById('parent-leaflet-map')) {
+        mapParent = L.map('parent-leaflet-map', { zoomControl: false }).setView([currentBusGPS.lat, currentBusGPS.lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(mapParent);
+        renderMapLayers(mapParent, 'parent');
+      }
+    }
+
+    function renderMapLayers(targetMap, mapType) {
+      if (!targetMap || allRealStops.length === 0) return;
+
+      // Extract corridor coords
+      const coords = allRealStops.map(s => [s.lat, s.lng]);
+
+      // Route Polyline (White Border with Dark Core - exact match to user screenshot)
+      L.polyline(coords, { color: '#ffffff', weight: 8, opacity: 0.95 }).addTo(targetMap);
+      L.polyline(coords, { color: '#0f172a', weight: 4.5, opacity: 1.0 }).addTo(targetMap);
+
+      // Render Stop Markers
+      const markersArray = [];
+      allRealStops.forEach(s => {
+        const isCurrent = s.id === currentSelectedStopId;
+        const stopIcon = L.divIcon({
+          html: `<div class="map-stop-node ${isCurrent ? 'child-stop' : ''}" title="${s.name}"></div>`,
+          className: '',
+          iconSize: isCurrent ? [18, 18] : [12, 12],
+          iconAnchor: isCurrent ? [9, 9] : [6, 6]
+        });
+
+        const m = L.marker([s.lat, s.lng], { icon: stopIcon }).addTo(targetMap);
+        m.bindPopup(`
+          <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; padding: 2px;">
+            <strong style="color: #0f172a;">Stop #${s.sequence}: ${s.name}</strong><br>
+            <span style="color: #2563eb; font-weight: 600;">500m Safe Custody Geofence</span><br>
+            <button onclick="selectStopFromMap(${s.id})" style="background:#2563eb; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; margin-top:4px; cursor:pointer;">
+              Select & Reconcile
+            </button>
+          </div>
+        `);
+        m.on('click', () => selectStopFromMap(s.id));
+        markersArray.push(m);
+      });
+
+      if (mapType === 'device') stopMarkersDevice = markersArray;
+      if (mapType === 'dash') stopMarkersDash = markersArray;
+      if (mapType === 'parent') stopMarkersParent = markersArray;
+
+      // Render Bus Marker
+      const busMarker = L.marker([currentBusGPS.lat, currentBusGPS.lng], {
+        icon: createBusMarkerIcon(currentBusGPS.busNumber)
+      }).addTo(targetMap);
+
+      busMarker.bindPopup(`
+        <div style="font-family: 'Outfit', sans-serif; font-size: 0.85rem;">
+          <b style="color: #0f172a;">${currentBusGPS.busNumber} (OD-02-X-1024)</b><br>
+          <span style="color: #059669; font-weight: bold;">⚡ Live Speed: ${currentBusGPS.speed} km/h</span><br>
+          <span style="color: #64748b;">Route: Khordha Corridor</span>
+        </div>
+      `);
+
+      // 500m Geofence circle
+      const activeStop = allRealStops.find(s => s.id === currentSelectedStopId) || allRealStops[0];
+      const stopLat = activeStop ? activeStop.lat : currentBusGPS.lat;
+      const stopLng = activeStop ? activeStop.lng : currentBusGPS.lng;
+
+      const geofenceCircle = L.circle([stopLat, stopLng], {
+        radius: 500,
+        color: '#f59e0b',
+        fillColor: '#fbbf24',
+        fillOpacity: 0.12,
+        weight: 1.5,
+        dashArray: '4, 4'
+      }).addTo(targetMap);
+
+      if (mapType === 'device') {
+        markerBusDevice = busMarker;
+        circleGeofenceDevice = geofenceCircle;
+      } else if (mapType === 'dash') {
+        markerBusDash = busMarker;
+        circleGeofenceDash = geofenceCircle;
+      } else if (mapType === 'parent') {
+        markerBusParent = busMarker;
+        circleGeofenceParent = geofenceCircle;
+      }
+    }
+
+    function selectStopFromMap(stopId) {
+      document.getElementById('stopSelector').value = stopId;
+      onStopChange(stopId);
+    }
+
+    function updateMapHighlights() {
+      const activeStop = allRealStops.find(s => s.id === currentSelectedStopId);
+      if (!activeStop) return;
+
+      document.getElementById('dashTargetStopText').textContent = activeStop.name;
+
+      // Update geofence circles
+      [circleGeofenceDevice, circleGeofenceDash, circleGeofenceParent].forEach(circle => {
+        if (circle) circle.setLatLng([activeStop.lat, activeStop.lng]);
+      });
+
+      // Update stop icons
+      function refreshMarkers(markers) {
+        markers.forEach((m, idx) => {
+          const s = allRealStops[idx];
+          if (!s) return;
+          const isCurrent = s.id === currentSelectedStopId;
+          const icon = L.divIcon({
+            html: `<div class="map-stop-node ${isCurrent ? 'child-stop' : ''}" title="${s.name}"></div>`,
+            className: '',
+            iconSize: isCurrent ? [18, 18] : [12, 12],
+            iconAnchor: isCurrent ? [9, 9] : [6, 6]
+          });
+          m.setIcon(icon);
+        });
+      }
+
+      refreshMarkers(stopMarkersDevice);
+      refreshMarkers(stopMarkersDash);
+      refreshMarkers(stopMarkersParent);
+
+      // Pan Device Map & Parent Map to active stop
+      if (mapDevice) mapDevice.panTo([activeStop.lat, activeStop.lng]);
+      if (mapParent) mapParent.panTo([activeStop.lat, activeStop.lng]);
+    }
+
+    function onStopChange(stopId) {
+      currentSelectedStopId = Number(stopId);
+      loadStopStudents(currentSelectedStopId);
+      updateMapHighlights();
+      document.getElementById('blockingAlertBanner').classList.remove('active');
+      document.getElementById('blockingAlertBanner').dataset.triggered = 'false';
+    }
+
+    function loadStopStudents(stopId) {
+      const stop = allRealStops.find(s => s.id === Number(stopId));
+      const stopName = stop ? stop.name : `Stop ${stopId}`;
+      const sequence = stop ? stop.sequence : '';
+
+      document.getElementById('bannerStopTitle').textContent = `STOP ${sequence} — ${stopName}`;
+      document.getElementById('manifestStopHeader').textContent = `${stopName} Expected Drop-Off Manifest`;
+
+      const matchedDrops = allRealExpectedDrops.filter(d => d.stop_id === Number(stopId));
+      activeStopStudents = matchedDrops.map(d => ({
+        id: d.student_id,
+        name: d.student_name,
+        roll_number: d.roll_number,
+        class: d.class || 'Standard',
+        exited: false,
+        method: null
+      }));
+
+      const names = activeStopStudents.map(s => s.name);
+      document.getElementById('bannerDropList').textContent = names.length > 0 
+        ? `Drop: ${names.join(', ')}` 
+        : 'No students scheduled for drop-off at this stop.';
+
+      document.getElementById('expectedDropCount').textContent = activeStopStudents.length;
+
+      renderChecklist();
+    }
+
+    function renderChecklist() {
+      const container = document.getElementById('studentChecklistContainer');
+      container.innerHTML = '';
+
+      if (activeStopStudents.length === 0) {
+        container.innerHTML = '<div style="color: #94a3b8; font-size: 0.9rem; padding: 12px; text-align: center;">No student drop-offs registered for this stop.</div>';
+        document.getElementById('manifestClearedSummary').textContent = '0 / 0 Verified';
+        return;
+      }
+
+      let clearedCount = 0;
+      activeStopStudents.forEach(s => {
+        if (s.exited) clearedCount++;
+        const item = document.createElement('div');
+        item.className = 'student-item';
+        item.innerHTML = `
+          <div class="student-info">
+            <div class="student-avatar">${s.name[0]}</div>
+            <div>
+              <div class="student-name">${s.name}</div>
+              <div class="student-class">Roll: ${s.roll_number || 'N/A'} &bull; Class: ${s.class}</div>
+            </div>
+          </div>
+          <div>
+            ${s.exited 
+              ? `<span class="status-pill cleared">✅ Exited (${s.method || 'VERIFIED'})</span>` 
+              : `<span class="status-pill pending">⏳ Pending Drop</span>`
+            }
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      document.getElementById('manifestClearedSummary').textContent = `${clearedCount} / ${activeStopStudents.length} Verified`;
+
+      // Check if departure alert banner should show
+      const pendingList = activeStopStudents.filter(s => !s.exited);
+      const alertBanner = document.getElementById('blockingAlertBanner');
+      if (pendingList.length > 0 && alertBanner.dataset.triggered === 'true') {
+        alertBanner.classList.add('active');
+        document.getElementById('blockingAlertNames').innerHTML = 
+          `Bus cannot depart. Pending exit verification for: <strong>${pendingList.map(s => s.name).join(', ')}</strong>`;
+      } else {
+        alertBanner.classList.remove('active');
+      }
+
+      updateParentView();
+    }
+
+    function switchView(viewName) {
+      document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      document.getElementById('view-' + viewName).classList.add('active');
+      event.currentTarget.classList.add('active');
+
+      // Refresh Leaflet maps on tab switch to avoid grey tiles
+      setTimeout(() => {
+        if (mapDevice) mapDevice.invalidateSize();
+        if (mapDash) mapDash.invalidateSize();
+        if (mapParent) mapParent.invalidateSize();
+      }, 150);
+    }
+
+    function setupParentPortalStudents() {
+      const container = document.getElementById('parentStudentTabs');
+      container.innerHTML = '';
+      const uniqueStudents = [];
+      const seen = new Set();
+      allRealExpectedDrops.forEach(d => {
+        if (!seen.has(d.student_id)) {
+          seen.add(d.student_id);
+          uniqueStudents.push(d);
+        }
+      });
+
+      uniqueStudents.slice(0, 8).forEach((d, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `p-tab ${idx === 0 ? 'active' : ''}`;
+        btn.textContent = d.student_name;
+        btn.onclick = () => selectParentStudent(d.student_id);
+        container.appendChild(btn);
+      });
+
+      if (uniqueStudents.length > 0) {
+        activeParentStudentId = uniqueStudents[0].student_id;
+        updateParentView();
+      }
+    }
+
+    function selectParentStudent(studentId) {
+      activeParentStudentId = studentId;
+      document.querySelectorAll('.p-tab').forEach(b => {
+        const matchDrop = allRealExpectedDrops.find(d => d.student_id === studentId);
+        if (matchDrop && b.textContent === matchDrop.student_name) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+      updateParentView();
+    }
+
+    function updateParentView() {
+      if (!activeParentStudentId) return;
+      const dropInfo = allRealExpectedDrops.find(d => d.student_id === activeParentStudentId);
+      if (!dropInfo) return;
+
+      document.getElementById('parentAssignedStopName').textContent = dropInfo.stop_name || 'Assigned Stop';
+
+      const stuInCurrent = activeStopStudents.find(s => s.id === activeParentStudentId);
+      const isExited = stuInCurrent ? stuInCurrent.exited : false;
+
+      const icon = document.getElementById('parentStatusIcon');
+      const badge = document.getElementById('parentStatusBadge');
+      const sub = document.getElementById('parentStatusSub');
+
+      if (isExited) {
+        icon.className = 'parent-status-icon cleared';
+        icon.textContent = '✓';
+        badge.className = 'parent-status-badge cleared';
+        badge.textContent = `Exited at ${dropInfo.stop_name} — verified`;
+        sub.textContent = `Verified by Attendant Hari via ${stuInCurrent.method || 'Biometric'} scan. Safe drop-off complete.`;
+      } else {
+        icon.className = 'parent-status-icon pending';
+        icon.textContent = '⏳';
+        badge.className = 'parent-status-badge pending';
+        badge.textContent = `Under verification`;
+        sub.textContent = `Bus is en route. Attendant Hari is conducting stop-level custody verification for ${dropInfo.stop_name}.`;
+      }
+    }
+
+    async function triggerDepartStop() {
+      const alertBanner = document.getElementById('blockingAlertBanner');
+      alertBanner.dataset.triggered = 'true';
+      const pending = activeStopStudents.filter(s => !s.exited);
+
+      if (pending.length > 0) {
+        alertBanner.classList.add('active');
+        document.getElementById('blockingAlertNames').innerHTML = 
+          `Bus cannot depart. Pending exit verification for: <strong>${pending.map(s => s.name).join(', ')}</strong>`;
+
+        try {
+          const res = await fetch(`/api/reconciliation/stops/${currentSelectedStopId}/depart`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trip_id: TRIP_ID, strict_mode: isStrictMode, actor_id: 'ATT-HARI' })
+          });
+          const data = await res.json();
+          if (data.blocked) {
+            alert('🚫 STRICT DEPARTURE MODE: Vehicle ignition locked! Resolve all pending custody drops before proceeding.');
+          }
+        } catch (e) {}
+
+        fetchLiveIncidents();
+      } else {
+        alertBanner.classList.remove('active');
+        alert('✅ All expected students for this stop verified! Bus departs safely.');
+      }
+      renderChecklist();
+    }
+
+    function toggleStrictMode(checked) {
+      isStrictMode = checked;
+    }
+
+    function simulateScanFirst(method) {
+      const pending = activeStopStudents.filter(s => !s.exited);
+      if (pending.length === 0) {
+        alert('All students for this stop have already exited.');
+        return;
+      }
+      const target = pending[0];
+      target.exited = true;
+      target.method = method;
+
+      fetch('/api/reconciliation/events/exit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trip_id: TRIP_ID,
+          student_id: target.id,
+          method: method,
+          stop_id: currentSelectedStopId,
+          device_ts: new Date().toISOString()
+        })
+      }).catch(console.warn);
+
+      renderChecklist();
+    }
+
+    function openManualScanModal() {
+      const pending = activeStopStudents.filter(s => !s.exited);
+      if (pending.length === 0) {
+        alert('All students for this stop have already exited.');
+        return;
+      }
+      const target = pending[0];
+      pendingModalStudentId = target.id;
+      currentModalAction = 'MANUAL';
+      document.getElementById('modalTitle').textContent = `Manual Attendance: ${target.name}`;
+      document.getElementById('modalStudentName').value = `${target.name} (${target.roll_number || 'ID ' + target.id})`;
+      document.getElementById('modalReasonText').value = 'Face recognition failed in low cabin light; attendant verified student credentials.';
+      document.getElementById('reasonModal').classList.add('active');
+    }
+
+    function openOverrideModal() {
+      const pending = activeStopStudents.filter(s => !s.exited);
+      if (pending.length === 0) return;
+      const target = pending[0];
+      pendingModalStudentId = target.id;
+      currentModalAction = 'AUTHORISED_OVERRIDE';
+      document.getElementById('modalTitle').textContent = `Authorised Override: ${target.name}`;
+      document.getElementById('modalStudentName').value = target.name;
+      document.getElementById('modalReasonText').value = 'Parent authorized pickup directly at gate by father with school approval.';
+      document.getElementById('reasonModal').classList.add('active');
+    }
+
+    function resolveAction(actionType) {
+      const pending = activeStopStudents.filter(s => !s.exited);
+      if (pending.length === 0) return;
+      const target = pending[0];
+
+      if (actionType === 'VERIFIED_IN_BUS') {
+        alert(`👁️ Verified in bus: Incident remains OPEN for ${target.name}. Bus continues, attendant keeps continuous watch.`);
+      } else if (actionType === 'VERIFIED_EXITED_MANUAL') {
+        target.exited = true;
+        target.method = 'MANUAL';
+        alert(`✅ "Verified exited (record missed)" recorded for ${target.name}. Incident closed.`);
+        renderChecklist();
+      }
+    }
+
+    function submitModalResolution() {
+      const reason = document.getElementById('modalReasonText').value.trim();
+      if (reason.length < 5) {
+        alert('⚠️ Mandatory reason required (at least 5 characters) for audit trail compliance.');
+        return;
+      }
+
+      const target = activeStopStudents.find(s => s.id === pendingModalStudentId);
+      if (target) {
+        target.exited = true;
+        target.method = currentModalAction === 'AUTHORISED_OVERRIDE' ? 'OVERRIDE' : 'MANUAL';
+
+        fetch('/api/reconciliation/events/exit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trip_id: TRIP_ID,
+            student_id: target.id,
+            method: 'MANUAL',
+            stop_id: currentSelectedStopId,
+            reason: reason,
+            device_ts: new Date().toISOString()
+          })
+        }).catch(console.warn);
+      }
+
+      closeModal();
+      renderChecklist();
+    }
+
+    function closeModal() {
+      document.getElementById('reasonModal').classList.remove('active');
+    }
+
+    async function fetchLiveIncidents() {
+      try {
+        const res = await fetch('/api/reconciliation/dashboard/incidents?status=OPEN');
+        const data = await res.json();
+        const tbody = document.getElementById('incidentTableBody');
+        tbody.innerHTML = '';
+        const list = data.incidents || [];
+        document.getElementById('incidentCountBadge').textContent = `${list.length} OPEN`;
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:16px;">No open incidents. All student drops reconciled.</td></tr>';
+          return;
+        }
+
+        list.forEach(i => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${i.student_name || 'Student #' + i.student_id}</strong><br><span style="color:#94a3b8; font-size:0.75rem;">Class ${i.class || 'Standard'}</span></td>
+            <td>${i.stop_name || 'Stop ' + i.stop_id}</td>
+            <td>${new Date(i.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+            <td><span style="color:#60a5fa;">${i.assigned_to || 'ATTENDANT'}</span></td>
+            <td><span class="sla-badge">⏱️ ${i.sla_timer_minutes || 15}m remaining</span></td>
+            <td>
+              <button class="btn-resolve-sm" onclick="openOverrideModal()">Resolve</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.warn('Could not fetch incidents:', e);
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', initRealData);
+  </script>
+</body>
+</html>
