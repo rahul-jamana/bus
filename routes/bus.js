@@ -3,10 +3,21 @@ const router = express.Router();
 const { dbQuery, dbGet, dbRun } = require('../db/database');
 const { dispatchBusSMSNotification } = require('./notifications');
 
-// POST /api/bus/board - Camera entry boarding detection (with automated fee status & anti-spoof validation)
+// POST /api/bus/board - Verified Boarding with Wrong Bus Detection & Audited Staff Override
 router.post('/board', async (req, res) => {
   try {
-    const { student_id, roll_number, bus_id = 1, route_id = 1, face_confidence = 98.5, photo_url = '', lat, lng } = req.body;
+    const { 
+      student_id, 
+      roll_number, 
+      bus_id = 1, 
+      route_id = 1, 
+      face_confidence = 98.5, 
+      photo_url = '', 
+      lat, 
+      lng,
+      staff_override = false,
+      manual_entry = false
+    } = req.body;
 
     let student = null;
     if (student_id) {
@@ -15,28 +26,28 @@ router.post('/board', async (req, res) => {
       student = await dbGet('SELECT * FROM students WHERE roll_number = ?', [roll_number]);
     }
 
-    // Check 1: Unknown Student
-    if (!student) {
-      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
-      const busNum = bus ? bus.bus_number : 'Bus #4';
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+    const rName = bus ? bus.route_name : 'Khordha';
 
+    // Check 1: Unknown Student (not found in database)
+    if (!student) {
       await dbRun(
-        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified) VALUES (?, ?, ?, ?, 'BOARD', 0, ?, 'UNKNOWN', ?, 0)`,
+        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified, stage) VALUES (?, ?, ?, ?, 'BOARD', 0, ?, 'UNKNOWN', ?, 0, 'BOARD')`,
         [0, roll_number || 'UNKNOWN', bus_id, route_id, face_confidence, photo_url]
       );
 
-      // Trigger Alert
       await dbRun(
         `INSERT INTO security_alerts (alert_type, camera_id, student_id, gate_name, photo_url, notes) VALUES (?, ?, ?, ?, ?, ?)`,
-        ['UNKNOWN_BUS_BOARDING', `Bus_${bus_id}_Cam`, 'UNKNOWN', `Bus Gate ${busNum}`, photo_url, 'Unknown face detected boarding bus. Boarding denied.']
+        ['UNKNOWN_BUS_BOARDING', `Bus_${bus_id}_Cam`, 'UNKNOWN', `Bus Gate ${busNum}`, photo_url, 'Unknown student detected at bus door.']
       );
 
       return res.json({
         success: false,
         allowed: false,
         alert: 'UNKNOWN_STUDENT',
-        message: '⚠️ UNKNOWN FACE DETECTED! Student not found in database. Boarding denied.',
+        message: '⚠️ UNKNOWN FACE DETECTED! Student not found in directory. Attendant must verify student ID.',
         time: timeStr
       });
     }
@@ -47,83 +58,77 @@ router.post('/board', async (req, res) => {
     const pMobile = student.parent_mobile || student.mobile;
     const pName = student.parent_name || 'Parent';
 
-    // Fetch Bus and Route details
-    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
-    const busNum = bus ? bus.bus_number : 'Bus #4';
-    const rName = bus ? bus.route_name : 'Khordha';
-
-    // Check 2: Bus Registration
+    // Check 2: Bus Assignment & Wrong Bus Detection
     const reg = await dbGet('SELECT * FROM bus_registrations WHERE student_id = ? AND is_active = 1', [sId]);
-    if (!reg) {
-      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const assignedBusId = student.assigned_bus_id || (reg ? reg.bus_id : bus_id);
 
-      await dbRun(
-        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, 'NOT_REGISTERED', ?, 1)`,
-        [sId, sRoll, bus_id, route_id, face_confidence, photo_url]
-      );
+    if (assignedBusId && Number(assignedBusId) !== Number(bus_id)) {
+      const assignedBus = await dbGet('SELECT * FROM buses WHERE id = ?', [assignedBusId]);
+      const assignedBusNum = assignedBus ? assignedBus.bus_number : `Bus #${assignedBusId}`;
 
-      await dispatchBusSMSNotification('UNREGISTERED_ALERT', {
-        studentName: sName,
-        rollNumber: sRoll,
-        parentName: pName,
-        parentMobile: pMobile,
-        busNumber: busNum,
-        routeName: rName,
-        studentId: sId,
-        timeStr
-      });
+      // If staff hasn't confirmed override yet, raise Wrong Bus Warning
+      if (!staff_override) {
+        await dbRun(
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified, stage) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, 'WRONG_BUS', ?, 1, 'BOARD')`,
+          [sId, sRoll, bus_id, route_id, face_confidence, photo_url]
+        );
 
-      return res.json({
-        success: false,
-        allowed: false,
-        alert: 'NOT_REGISTERED',
-        message: `⚠️ NOT REGISTERED: Student ${sName} (${sRoll}) is not registered for Bus Service. Boarding blocked!`,
-        student: { id: sId, name: sName, roll: sRoll }
-      });
+        await dispatchBusSMSNotification('WRONG_BUS_WARNING', {
+          studentName: sName,
+          rollNumber: sRoll,
+          parentName: pName,
+          parentMobile: pMobile,
+          busNumber: busNum,
+          routeName: rName,
+          studentId: sId,
+          timeStr
+        });
+
+        return res.json({
+          success: false,
+          allowed: false,
+          alert: 'WRONG_BUS',
+          requires_override: true,
+          message: `⚠️ WRONG BUS ALERT: ${sName} (${sRoll}) is assigned to ${assignedBusNum}, but is attempting to board ${busNum}! Staff override required.`,
+          student: { id: sId, name: sName, roll: sRoll, assigned_bus: assignedBusNum, current_bus: busNum }
+        });
+      } else {
+        // Staff override provided! Log with override flag and proceed
+        await dbRun(
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, ?, ?, 'WRONG_BUS_OVERRIDDEN', ?, 1, 1, 'BOARD')`,
+          [sId, sRoll, bus_id, route_id, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url]
+        );
+
+        const smsRes = await dispatchBusSMSNotification('WRONG_BUS_OVERRIDDEN', {
+          studentName: sName,
+          rollNumber: sRoll,
+          parentName: pName,
+          parentMobile: pMobile,
+          busNumber: busNum,
+          routeName: rName,
+          studentId: sId,
+          timeStr
+        });
+
+        return res.json({
+          success: true,
+          allowed: true,
+          overridden: true,
+          alert: 'WRONG_BUS_OVERRIDDEN',
+          message: `✔ SUPERVISED BOARDING: ${sName} permitted to board ${busNum} under staff override. Parent alerted.`,
+          student: { id: sId, name: sName, roll: sRoll, assigned_bus: assignedBusNum },
+          smsContent: smsRes.message
+        });
+      }
     }
 
-    // Check 3: Transport Fee Status (Feature 7)
-    const fee = await dbGet('SELECT * FROM transport_fees WHERE student_id = ?', [sId]);
-    const feeStatus = fee ? fee.status : reg.fee_status;
-
-    if (feeStatus === 'UNPAID') {
-      const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-      await dbRun(
-        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, alert_type, photo_url, parent_notified) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, 'FEE_PENDING', ?, 1)`,
-        [sId, sRoll, bus_id, route_id, face_confidence, photo_url]
-      );
-
-      // Trigger Warden Alert
-      await dispatchBusSMSNotification('FEE_UNPAID_ALERT', {
-        studentName: sName,
-        rollNumber: sRoll,
-        parentName: pName,
-        parentMobile: pMobile,
-        busNumber: busNum,
-        routeName: rName,
-        studentId: sId,
-        timeStr
-      });
-
-      return res.json({
-        success: false,
-        allowed: false,
-        alert: 'FEE_PENDING',
-        message: `⛔ FEE UNPAID ALERT: ${sName} (${sRoll}) has pending transport fees! Boarding blocked. Warden & Parent alerted.`,
-        student: { id: sId, name: sName, roll: sRoll, fee_status: 'UNPAID' }
-      });
-    }
-
-    // Success Boarding (Feature 1)
-    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
+    // Success Boarding (Correct Bus)
+    const isFace = manual_entry ? 0 : 1;
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified) VALUES (?, ?, ?, ?, 'BOARD', 1, ?, ?, ?, 'NONE', ?, 1)`,
-      [sId, sRoll, bus_id, route_id, face_confidence, lat || 20.2961, lng || 85.8245, photo_url]
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage) VALUES (?, ?, ?, ?, 'BOARD', ?, ?, ?, ?, 'NONE', ?, 1, ?, 'BOARD')`,
+      [sId, sRoll, bus_id, route_id, isFace, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url, staff_override ? 1 : 0]
     );
 
-    // Send Feature 1 SMS to Parent
     const smsRes = await dispatchBusSMSNotification('BOARD', {
       studentName: sName,
       rollNumber: sRoll,
@@ -139,8 +144,8 @@ router.post('/board', async (req, res) => {
       success: true,
       allowed: true,
       alert: 'NONE',
-      message: `✔ BOARDED: ${sName} (${sRoll}) boarded ${busNum} at ${timeStr}. Parent SMS sent!`,
-      student: { id: sId, name: sName, roll: sRoll, fee_status: feeStatus },
+      message: `✔ BOARDED: ${sName} (${sRoll}) safely boarded ${busNum} at ${timeStr}. Photo proof saved & Parent SMS sent!`,
+      student: { id: sId, name: sName, roll: sRoll, pickup_stop: student.pickup_stop_name || 'Pitapalli Square' },
       smsContent: smsRes.message
     });
   } catch (err) {
@@ -254,31 +259,300 @@ router.post('/leave-college', async (req, res) => {
   }
 });
 
-// POST /api/bus/arrive-stop - Trigger Home Stop Arrival SMS Notification (Location Stop Drop)
+// POST /api/bus/arrive-stop - Trigger Stop Arrival (Student specific or stop broadcast)
 router.post('/arrive-stop', async (req, res) => {
   try {
-    const { student_id, roll_number, stop_name = 'Pitapalli Square' } = req.body;
-    let student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
-    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
-
+    const { student_id, roll_number, bus_id = 1, stop_name = 'Pitapalli Square' } = req.body;
+    const stopName = stop_name || 'Pitapalli Square';
+    let student = null;
+    if (student_id || roll_number) {
+      student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
+    }
     const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+    if (student) {
+      await dbRun(
+        `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, parent_notified, stage) VALUES (?, ?, ?, 'ARRIVE_STOP', 1, 1, 'ARRIVE_STOP')`,
+        [student.id, student.roll_number, bus_id]
+      );
+      const smsRes = await dispatchBusSMSNotification('ARRIVE_STOP', {
+        studentName: student.name,
+        rollNumber: student.roll_number,
+        parentName: student.parent_name,
+        parentMobile: student.parent_mobile || student.mobile,
+        stopName,
+        studentId: student.id,
+        timeStr
+      });
+      return res.json({ success: true, message: `✔ ${student.name} reached ${stopName} at ${timeStr}. Parent SMS sent!`, smsContent: smsRes.message });
+    } else {
+      // Broadcast stop arrival
+      const busStudents = await dbQuery(
+        `SELECT s.* FROM students s
+         JOIN bus_registrations br ON s.id = br.student_id
+         WHERE br.bus_id = ? AND (s.pickup_stop_name LIKE ? OR s.drop_stop_name LIKE ?)`,
+        [bus_id, `%${stopName}%`, `%${stopName}%`]
+      );
+      for (const s of busStudents) {
+        await dbRun(
+          `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, parent_notified, stage) VALUES (?, ?, ?, 'ARRIVE_STOP', 1, 1, 'ARRIVE_STOP')`,
+          [s.id, s.roll_number, bus_id]
+        );
+        await dispatchBusSMSNotification('ARRIVE_STOP', {
+          studentName: s.name,
+          rollNumber: s.roll_number,
+          parentName: s.parent_name,
+          parentMobile: s.parent_mobile || s.mobile,
+          stopName,
+          studentId: s.id,
+          timeStr
+        });
+      }
+      return res.json({ success: true, message: `✔ Bus arrived at ${stopName}. Notified ${busStudents.length} parents!`, count: busStudents.length });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/verify-exit - Stage 2: Child safely stepped off the bus
+router.post('/verify-exit', async (req, res) => {
+  try {
+    const { student_id, roll_number, bus_id = 1, stop_name = 'Pitapalli Square', photo_url = '' } = req.body;
+    const stopName = stop_name || 'Pitapalli Square';
+    let student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found in directory' });
+
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, log_type, face_matched, parent_notified) VALUES (?, ?, 'ARRIVE_STOP', 1, 1)`,
-      [student.id, student.roll_number]
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, photo_url, parent_notified, stage) VALUES (?, ?, ?, 'STUDENT_EXIT', 1, ?, 1, 'EXIT')`,
+      [student.id, student.roll_number, bus_id, photo_url]
     );
 
-    const smsRes = await dispatchBusSMSNotification('ARRIVE_STOP', {
+    const smsRes = await dispatchBusSMSNotification('STUDENT_EXIT', {
       studentName: student.name,
       rollNumber: student.roll_number,
       parentName: student.parent_name,
       parentMobile: student.parent_mobile || student.mobile,
+      busNumber: busNum,
       stopName,
       studentId: student.id,
       timeStr
     });
 
-    res.json({ success: true, message: `✔ ${student.name} reached ${stopName} at ${timeStr}. Parent SMS sent!`, smsContent: smsRes.message });
+    res.json({
+      success: true,
+      message: `✔ VERIFIED EXIT: ${student.name} (${student.roll_number}) safely stepped off at ${stopName}. Ready for guardian handover.`,
+      student: { id: student.id, name: student.name, roll: student.roll_number },
+      smsContent: smsRes.message
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/verify-handover - Stage 3: Custody Handover to Parent/Guardian with Pickup OTP
+router.post('/verify-handover', async (req, res) => {
+  try {
+    const { student_id, roll_number, bus_id = 1, stop_name = 'Pitapalli Square', guardian_code, attendant_verified = false } = req.body;
+    const stopName = stop_name || 'Pitapalli Square';
+    let student = await dbGet('SELECT * FROM students WHERE id = ? OR student_id = ? OR roll_number = ?', [student_id, student_id, roll_number]);
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found in directory' });
+
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
+
+    const expectedCode = student.guardian_code || '7421';
+    const isCodeMatch = (guardian_code && String(guardian_code).trim() === String(expectedCode).trim());
+
+    if (!isCodeMatch && !attendant_verified) {
+      return res.status(400).json({
+        success: false,
+        verified: false,
+        alert: 'INVALID_GUARDIAN_CODE',
+        message: `❌ INVALID GUARDIAN CODE: The entered code (${guardian_code}) does not match student ${student.name}'s active pickup code (${expectedCode}). Check Parent Portal OTP.`
+      });
+    }
+
+    await dbRun(
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, log_type, face_matched, parent_notified, guardian_code_verified, stage) VALUES (?, ?, ?, 'GUARDIAN_HANDOVER', 1, 1, 1, 'HANDOVER')`,
+      [student.id, student.roll_number, bus_id]
+    );
+
+    const smsRes = await dispatchBusSMSNotification('GUARDIAN_HANDOVER', {
+      studentName: student.name,
+      rollNumber: student.roll_number,
+      parentName: student.parent_name,
+      parentMobile: student.parent_mobile || student.mobile,
+      busNumber: busNum,
+      stopName,
+      studentId: student.id,
+      timeStr
+    });
+
+    res.json({
+      success: true,
+      verified: true,
+      message: `✔ GUARDIAN HANDOVER COMPLETE: ${student.name} received by guardian at ${stopName}. Chain of custody verified!`,
+      student: { id: student.id, name: student.name, roll: student.roll_number, parent_name: student.parent_name },
+      smsContent: smsRes.message
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==============================================================================
+// TRIPS & END-OF-TRIP PHYSICAL SLEEPING CHILD INSPECTION
+// ==============================================================================
+
+// POST /api/bus/trips/start - Driver Starts Route Trip
+router.post('/trips/start', async (req, res) => {
+  try {
+    const { bus_id = 1, trip_type = 'PICKUP', driver_name } = req.body;
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const dName = driver_name || bus?.driver_name || 'Ramesh Kumar';
+
+    const tripRun = await dbRun(
+      `INSERT INTO trips (bus_id, trip_type, status, driver_name) VALUES (?, ?, 'ACTIVE', ?)`,
+      [bus_id, trip_type, dName]
+    );
+
+    await dbRun(`UPDATE buses SET status = 'ON_ROUTE', last_updated = CURRENT_TIMESTAMP WHERE id = ?`, [bus_id]);
+
+    await dispatchBusSMSNotification('TRIP_STARTED', {
+      busNumber: bus?.bus_number || `Bus #${bus_id}`,
+      routeName: bus?.route_name || 'Khordha',
+      timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    });
+
+    res.json({
+      success: true,
+      trip_id: tripRun.id,
+      bus_id,
+      trip_type,
+      message: `✔ Trip Started for ${bus?.bus_number || 'Bus'}. Live GPS broadcasting active.`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/trips/end - Driver Ends Trip with Mandatory Walkthrough Checklist
+router.post('/trips/end', async (req, res) => {
+  try {
+    const { trip_id, bus_id = 1, inspection_checklist_completed, inspection_notes = 'Aisle and every seat row physically checked. Zero sleeping children on bus.' } = req.body;
+    
+    if (!inspection_checklist_completed) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ SAFETY VIOLATION: Cannot end trip without completing the physical Sleeping Child Walkthrough inspection!'
+      });
+    }
+
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+
+    if (trip_id) {
+      await dbRun(
+        `UPDATE trips SET status = 'COMPLETED', ended_at = CURRENT_TIMESTAMP, inspection_checklist_completed = 1, inspection_notes = ? WHERE id = ?`,
+        [inspection_notes, trip_id]
+      );
+    } else {
+      await dbRun(
+        `UPDATE trips SET status = 'COMPLETED', ended_at = CURRENT_TIMESTAMP, inspection_checklist_completed = 1, inspection_notes = ? WHERE bus_id = ? AND status = 'ACTIVE'`,
+        [inspection_notes, bus_id]
+      );
+    }
+
+    await dbRun(`UPDATE buses SET status = 'IDLE', speed = 0, last_updated = CURRENT_TIMESTAMP WHERE id = ?`, [bus_id]);
+
+    await dispatchBusSMSNotification('TRIP_ENDED', {
+      busNumber: bus?.bus_number || `Bus #${bus_id}`,
+      routeName: bus?.route_name || 'Khordha',
+      timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    });
+
+    res.json({
+      success: true,
+      message: `✔ Trip completed safely. Physical walkthrough inspection confirmed: 0 sleeping children remaining.`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/trips/active/:bus_id
+router.get('/trips/active/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const trip = await dbGet('SELECT * FROM trips WHERE bus_id = ? AND status = "ACTIVE" ORDER BY id DESC LIMIT 1', [busId]);
+    res.json({ success: true, active_trip: trip || null });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==============================================================================
+// EMERGENCY SOS INCIDENTS
+// ==============================================================================
+
+// POST /api/bus/sos - Emergency SOS Broadcast
+router.post('/sos', async (req, res) => {
+  try {
+    const { bus_id = 1, driver_name, lat, lng, alert_type = 'EMERGENCY_SOS', notes = 'Driver triggered panic button on mobile console' } = req.body;
+    const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
+    const dName = driver_name || bus?.driver_name || 'Driver';
+
+    const sosRun = await dbRun(
+      `INSERT INTO sos_alerts (bus_id, driver_name, gps_lat, gps_lng, alert_type, status) VALUES (?, ?, ?, ?, ?, 'ACTIVE')`,
+      [bus_id, dName, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, alert_type]
+    );
+
+    await dbRun(
+      `INSERT INTO security_alerts (alert_type, camera_id, student_id, gate_name, notes) VALUES (?, ?, 'FLEET', ?, ?)`,
+      ['BUS_EMERGENCY_SOS', `Bus_${bus_id}`, bus?.bus_number || `Bus #${bus_id}`, notes]
+    );
+
+    await dispatchBusSMSNotification('SOS_ALERT', {
+      busNumber: bus?.bus_number || `Bus #${bus_id}`,
+      routeName: bus?.route_name || 'Khordha',
+      timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    });
+
+    res.json({
+      success: true,
+      sos_id: sosRun.id,
+      message: `🚨 EMERGENCY SOS BROADCAST: Administration, transport warden, and parents alerted!`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/sos/active
+router.get('/sos/active', async (req, res) => {
+  try {
+    const alerts = await dbQuery(
+      `SELECT a.*, b.bus_number, b.route_name, b.driver_phone FROM sos_alerts a
+       LEFT JOIN buses b ON a.bus_id = b.id
+       WHERE a.status = 'ACTIVE' ORDER BY a.id DESC`
+    );
+    res.json({ success: true, count: alerts.length, alerts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/sos/resolve
+router.post('/sos/resolve', async (req, res) => {
+  try {
+    const { id } = req.body;
+    await dbRun(`UPDATE sos_alerts SET status = 'RESOLVED' WHERE id = ?`, [id]);
+    res.json({ success: true, message: 'SOS Alert marked resolved.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -557,14 +831,39 @@ router.get('/parent-track/:query', async (req, res) => {
 
     // Get bus registration
     const reg = await dbGet('SELECT * FROM bus_registrations WHERE student_id = ? AND is_active = 1', [student.id]);
-    const busId = reg ? reg.bus_id : 1;
+    const busId = student.assigned_bus_id || (reg ? reg.bus_id : 1);
     const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [busId]);
 
-    // Get latest boarding log today
-    const latestLog = await dbGet(
-      `SELECT * FROM bus_boarding_logs WHERE (student_id = ? OR roll_number = ?) ORDER BY id DESC LIMIT 1`,
+    // Check if GPS telemetry is stale (>90 seconds old during active trip)
+    let isGpsStale = false;
+    let lastUpdatedFormatted = 'Recently';
+    if (bus && bus.last_updated) {
+      const lastTs = new Date(bus.last_updated).getTime();
+      const diffSec = Math.floor((Date.now() - lastTs) / 1000);
+      if (diffSec > 90) {
+        isGpsStale = true;
+        lastUpdatedFormatted = `${diffSec} seconds ago`;
+      } else {
+        lastUpdatedFormatted = `${diffSec}s ago`;
+      }
+    }
+
+    // Today's journey logs for discrete custody milestones
+    const todayLogs = await dbQuery(
+      `SELECT * FROM bus_boarding_logs 
+       WHERE (student_id = ? OR roll_number = ?) 
+       ORDER BY id DESC LIMIT 20`,
       [student.id, student.roll_number]
     );
+
+    const isBoarded = todayLogs.some(l => l.log_type === 'BOARD' || l.stage === 'BOARD');
+    const isArrivedStop = todayLogs.some(l => l.log_type === 'ARRIVE_STOP' || l.stage === 'ARRIVE_STOP');
+    const isExited = todayLogs.some(l => l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT');
+    const isHandedOver = todayLogs.some(l => l.log_type === 'GUARDIAN_HANDOVER' || l.stage === 'HANDOVER');
+
+    const boardingLog = todayLogs.find(l => l.log_type === 'BOARD' || l.stage === 'BOARD');
+    const exitLog = todayLogs.find(l => l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT');
+    const handoverLog = todayLogs.find(l => l.log_type === 'GUARDIAN_HANDOVER' || l.stage === 'HANDOVER');
 
     // Get latest parent notifications
     const notifications = await dbQuery(
@@ -584,10 +883,24 @@ router.get('/parent-track/:query', async (req, res) => {
         student_id: student.student_id,
         branch: student.branch || student.department,
         section: student.section,
-        parent_name: student.parent_name,
+        parent_name: student.parent_name || 'Guardian',
         parent_mobile: student.parent_mobile || student.mobile,
         parent_email: student.parent_email,
-        photo_path: student.photo_path || ''
+        photo_path: student.photo_path || '',
+        pickup_stop: student.pickup_stop_name || 'Pitapalli Square',
+        drop_stop: student.drop_stop_name || 'Pitapalli Square',
+        guardian_code: student.guardian_code || '7421'
+      },
+      journey: {
+        is_boarded: isBoarded,
+        is_arrived_stop: isArrivedStop,
+        is_exited: isExited,
+        is_handed_over: isHandedOver,
+        current_status: isHandedOver ? 'HANDED_OVER' : (isExited ? 'EXITED_WAITING_GUARDIAN' : (isArrivedStop ? 'AT_STOP' : (isBoarded ? 'ON_BUS' : 'NOT_BOARDED'))),
+        boarding_time: boardingLog ? boardingLog.log_time : null,
+        boarding_photo: boardingLog ? boardingLog.photo_url : null,
+        exit_time: exitLog ? exitLog.log_time : null,
+        handover_time: handoverLog ? handoverLog.log_time : null
       },
       bus: bus ? {
         id: bus.id,
@@ -602,10 +915,12 @@ router.get('/parent-track/:query', async (req, res) => {
         speed: bus.speed || 0,
         heading: bus.heading || 0,
         status: bus.status || 'ACTIVE',
-        last_updated: bus.last_updated
+        last_updated: bus.last_updated,
+        last_updated_human: lastUpdatedFormatted,
+        is_gps_stale: isGpsStale
       } : null,
       stops,
-      latest_log: latestLog,
+      latest_log: todayLogs[0] || null,
       notifications
     });
   } catch (err) {

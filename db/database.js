@@ -174,6 +174,21 @@ async function initDatabase() {
         if (!colNames.includes('academic_year')) {
           db.run("ALTER TABLE students ADD COLUMN academic_year TEXT DEFAULT '2026'");
         }
+        if (!colNames.includes('consent_face_enrolled')) {
+          db.run("ALTER TABLE students ADD COLUMN consent_face_enrolled INTEGER DEFAULT 1");
+        }
+        if (!colNames.includes('assigned_bus_id')) {
+          db.run("ALTER TABLE students ADD COLUMN assigned_bus_id INTEGER DEFAULT 1");
+        }
+        if (!colNames.includes('pickup_stop_name')) {
+          db.run("ALTER TABLE students ADD COLUMN pickup_stop_name TEXT DEFAULT 'Pitapalli Square'");
+        }
+        if (!colNames.includes('drop_stop_name')) {
+          db.run("ALTER TABLE students ADD COLUMN drop_stop_name TEXT DEFAULT 'Pitapalli Square'");
+        }
+        if (!colNames.includes('guardian_code')) {
+          db.run("ALTER TABLE students ADD COLUMN guardian_code TEXT DEFAULT '7421'");
+        }
 
         // Alter student_face_data if frame_count missing
         try {
@@ -398,6 +413,50 @@ async function initDatabase() {
             alert_type TEXT DEFAULT 'NONE',
             photo_url TEXT,
             parent_notified INTEGER DEFAULT 0,
+            trip_id INTEGER DEFAULT 0,
+            staff_override INTEGER DEFAULT 0,
+            guardian_code_verified INTEGER DEFAULT 0,
+            stage TEXT DEFAULT 'BOARD',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // Migration helper for bus_boarding_logs
+        try {
+          const bLogCols = await dbQuery("PRAGMA table_info(bus_boarding_logs)");
+          const bLogColNames = bLogCols.map(c => c.name);
+          if (!bLogColNames.includes('trip_id')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN trip_id INTEGER DEFAULT 0");
+          if (!bLogColNames.includes('staff_override')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN staff_override INTEGER DEFAULT 0");
+          if (!bLogColNames.includes('guardian_code_verified')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN guardian_code_verified INTEGER DEFAULT 0");
+          if (!bLogColNames.includes('stage')) await dbRun("ALTER TABLE bus_boarding_logs ADD COLUMN stage TEXT DEFAULT 'BOARD'");
+        } catch (e) {}
+
+        // Trips Table for Trip Start/End & Sleeping Child Walkthrough Inspection
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS trips (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bus_id INTEGER NOT NULL,
+            trip_type TEXT DEFAULT 'PICKUP',
+            status TEXT DEFAULT 'ACTIVE',
+            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            ended_at DATETIME,
+            driver_name TEXT,
+            inspection_checklist_completed INTEGER DEFAULT 0,
+            inspection_notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // SOS Incidents Table
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS sos_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bus_id INTEGER NOT NULL,
+            driver_name TEXT,
+            gps_lat REAL,
+            gps_lng REAL,
+            alert_type TEXT DEFAULT 'EMERGENCY_SOS',
+            status TEXT DEFAULT 'ACTIVE',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `);
@@ -462,6 +521,26 @@ async function initDatabase() {
             `INSERT INTO transport_fees (student_id, academic_year, total_fee, paid_amount, pending_amount, status) VALUES (?, '2026', 15000, 15000, 0, 'PAID')`,
             [munuId]
           );
+        }
+
+        // Seed Master Demo Student: Rohan Verma (ROHAN-04 / Class V / Bus-04)
+        let rohan = await dbGet('SELECT * FROM students WHERE roll_number = ? OR student_id = ?', ['ROHAN-04', 'STU-ROHAN']);
+        if (!rohan) {
+          const resRohan = await dbRun(
+            `INSERT INTO students (student_id, name, roll_number, registration_number, branch, department, semester, section, mobile, phone, email, address, parent_name, parent_mobile, parent_whatsapp, emergency_contact, face_enrolled, consent_face_enrolled, assigned_bus_id, pickup_stop_name, drop_stop_name, guardian_code) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ['STU-ROHAN', 'Rohan Verma', 'ROHAN-04', 'REG-2026-ROH', 'Class V', 'Primary Wing', 'Grade 5', 'A', '+91 9876543210', '+91 9876543210', 'manoj.verma@schoolsafe.edu', 'Plot 42, Pitapalli Square, Khordha', 'Manoj Verma', '+91 9876543210', '+91 9876543210', '+91 9876543210', 1, 1, 1, 'Pitapalli Square', 'Pitapalli Square', '7421']
+          );
+          const rohanId = resRohan.id;
+          await dbRun(
+            `INSERT INTO bus_registrations (student_id, bus_id, route_id, stop_id, academic_year, fee_status) VALUES (?, 1, 1, 2, '2026', 'PAID')`,
+            [rohanId]
+          );
+          await dbRun(
+            `INSERT INTO transport_fees (student_id, academic_year, total_fee, paid_amount, pending_amount, status) VALUES (?, '2026', 15000, 15000, 0, 'PAID')`,
+            [rohanId]
+          );
+          console.log('Seeded Master Demo Subject: Rohan Verma (ROHAN-04, Guardian: Manoj Verma +91 9876543210)');
         }
 
         // Auto-sync all existing students in database to bus_registrations & transport_fees

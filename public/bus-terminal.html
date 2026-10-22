@@ -203,6 +203,15 @@
             </div>
           </div>
 
+          <!-- WRONG BUS ALERT BOX -->
+          <div id="wrong-bus-alert-box" class="alert alert-warning py-3 mb-3 text-start border-warning" style="display: none;">
+            <strong class="d-block text-danger fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i> WRONG BUS ALERT!</strong>
+            <span id="wrong-bus-message-text" class="small d-block text-dark mb-2">Student is assigned to a different bus!</span>
+            <button class="btn btn-warning btn-sm w-100 fw-bold shadow-sm" onclick="overrideWrongBus()">
+              <i class="fa-solid fa-user-shield me-1"></i> Authorize Supervised Boarding (Staff Override)
+            </button>
+          </div>
+
           <div id="captured-snapshot-preview" style="display: none;" class="mb-3">
             <span class="text-muted small d-block mb-1">Live Boarding Photo Captured:</span>
             <img id="snapshot-img" src="" class="rounded-3 border border-primary shadow-sm" style="width: 140px; height: 140px; object-fit: cover;">
@@ -214,10 +223,57 @@
           </div>
         </div>
 
+        <!-- 3-STAGE DROP-OFF & GUARDIAN HANDOVER PANEL (Shown in Drop-Off mode) -->
+        <div id="dropoff-handover-panel" class="card p-3 border rounded-3 mt-3 bg-white" style="display: none;">
+          <span class="small fw-bold text-danger mb-2 d-block"><i class="fa-solid fa-shield-cat me-1"></i> 3-Stage Drop-Off & Guardian Handover</span>
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary btn-sm fw-bold text-start p-2" onclick="terminalArriveStop()">
+              <i class="fa-solid fa-location-dot text-primary me-2"></i>1. Bus Arrived at Stop (Pitapalli Square)
+            </button>
+            <button class="btn btn-outline-info btn-sm fw-bold text-start p-2 text-dark" onclick="terminalVerifyExit()">
+              <i class="fa-solid fa-door-open text-info me-2"></i>2. Verify Student Exited Bus
+            </button>
+            <div class="mt-1">
+              <label class="form-label small fw-bold text-secondary mb-1">3. Enter Guardian Pickup Code (OTP):</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="terminal-otp-input" class="form-control font-monospace fw-bold" placeholder="7421" value="7421">
+                <button class="btn btn-success fw-bold" onclick="terminalVerifyHandover()"><i class="fa-solid fa-check me-1"></i> Verify OTP</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MANUAL ERP ID CARD FALLBACK (Safety Rule: Never strand a child if face fails!) -->
+        <div class="card p-3 border rounded-3 mt-3 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-primary"><i class="fa-solid fa-id-card-clip me-1"></i> Manual ERP ID Fallback</span>
+            <span class="badge bg-light text-secondary border">Safety Fallback</span>
+          </div>
+          <div class="input-group input-group-sm mb-2">
+            <input type="text" id="manual-student-input" class="form-control" placeholder="Enter Roll No or ID (e.g. ROHAN-04)">
+            <button class="btn btn-primary fw-bold" onclick="submitManualBoarding()">Verify Boarding</button>
+          </div>
+          <div class="d-flex gap-1 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('ROHAN-04')">Rohan Verma (ROHAN-04)</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('BEC26081')">Munu Nial (BEC26081)</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" onclick="quickManual('101')">Rahul Kumar (101)</button>
+          </div>
+        </div>
+
         <!-- RECENT BOARDING LOGS -->
         <div class="card p-3 border rounded-3 mt-3 bg-white">
-          <h6 class="fw-bold text-primary mb-2 small text-uppercase"><i class="fa-solid fa-clock-rotate-left me-1"></i> Today's Door Scans</h6>
-          <div id="recent-scans-list" class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-primary mb-0 small text-uppercase"><i class="fa-solid fa-clock-rotate-left me-1"></i> Today's Door Scans</h6>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary py-0 px-2 dropdown-toggle" style="font-size: 0.72rem;" data-bs-toggle="dropdown">Quick Demo Scan</button>
+              <ul class="dropdown-menu dropdown-menu-end small shadow border-0">
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simCameraMatch('ROHAN-04')">Scan Rohan Verma (Normal)</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simWrongBusScan('ROHAN-04')">Scan Rohan (Wrong Bus Alert)</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="simCameraMatch('BEC26081')">Scan Munu Nial</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="recent-scans-list" class="d-flex flex-column gap-2" style="max-height: 180px; overflow-y: auto;">
             <div class="text-center py-2 text-muted small">No scans registered yet.</div>
           </div>
         </div>
@@ -228,6 +284,7 @@
 
   <!-- Audio Chimes -->
   <audio id="audio-success" src="https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3" preload="auto"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     let currentMode = 'BOARD'; // 'BOARD' or 'DEBOARD'
@@ -248,17 +305,20 @@
       const bBtn = document.getElementById('mode-boarding-btn');
       const dBtn = document.getElementById('mode-dropoff-btn');
       const label = document.getElementById('scan-mode-label');
+      const handoverPanel = document.getElementById('dropoff-handover-panel');
 
       if (mode === 'BOARD') {
         bBtn.className = 'scan-mode-btn active-boarding';
         dBtn.className = 'scan-mode-btn btn-light';
         label.innerText = 'Morning Boarding (Entry)';
         label.className = 'text-success';
+        if (handoverPanel) handoverPanel.style.display = 'none';
       } else {
         dBtn.className = 'scan-mode-btn active-dropoff';
         bBtn.className = 'scan-mode-btn btn-light';
         label.innerText = 'Drop-Off Exit (Safe Arrival)';
         label.className = 'text-danger';
+        if (handoverPanel) handoverPanel.style.display = 'block';
       }
     }
 
@@ -390,7 +450,8 @@
       const snapshotBase64 = c.toDataURL('image/jpeg', 0.85);
 
       const busId = document.getElementById('bus-terminal-select').value;
-      const endpoint = currentMode === 'BOARD' ? '/api/bus/board' : '/api/bus/deboard';
+      const endpoint = currentMode === 'BOARD' ? '/api/bus/board' : '/api/bus/verify-exit';
+      let currentWrongBusRoll = null;
 
       try {
         const res = await fetch(endpoint, {
@@ -406,11 +467,24 @@
         });
         const data = await res.json();
 
+        // Check for Wrong Bus Warning
+        const wrongBox = document.getElementById('wrong-bus-alert-box');
+        if (data.alert === 'WRONG_BUS') {
+          currentWrongBusRoll = student.roll_number;
+          window.lastWrongRoll = student.roll_number;
+          wrongBox.style.display = 'block';
+          document.getElementById('wrong-bus-message-text').innerText = data.message;
+          document.getElementById('scanned-status').innerText = '⚠️ Wrong Bus Detected';
+          document.getElementById('scanned-status').className = 'text-warning fw-bold';
+        } else {
+          wrongBox.style.display = 'none';
+          document.getElementById('scanned-status').innerText = currentMode === 'BOARD' ? '✔ Boarded Bus' : '✔ Deboarded / Exited';
+          document.getElementById('scanned-status').className = 'text-success fw-bold';
+        }
+
         // Update UI Card
         document.getElementById('scanned-name').innerText = student.name;
         document.getElementById('scanned-roll').innerText = `Roll: ${student.roll_number}`;
-        document.getElementById('scanned-status').innerText = currentMode === 'BOARD' ? '✔ Boarded Bus' : '✔ Safe Arrival Drop-Off';
-        document.getElementById('scanned-status').className = currentMode === 'BOARD' ? 'text-success fw-bold' : 'text-primary fw-bold';
         document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         document.getElementById('scanned-sms-badge').innerText = 'Parent SMS Sent ✅';
         document.getElementById('scanned-sms-badge').className = 'badge bg-success-subtle text-success border border-success';
@@ -419,7 +493,7 @@
         document.getElementById('captured-snapshot-preview').style.display = 'block';
 
         // Add to recent list
-        addRecentScan(student.name, student.roll_number, currentMode);
+        addRecentScan(student.name, student.roll_number, currentMode, data.alert);
       } catch (err) {
         console.error('Error logging scan:', err);
       } finally {
@@ -430,7 +504,148 @@
       }
     }
 
-    function addRecentScan(name, roll, mode) {
+    async function overrideWrongBus() {
+      const roll = window.lastWrongRoll || 'ROHAN-04';
+      const busId = document.getElementById('bus-terminal-select').value;
+      try {
+        const res = await fetch('/api/bus/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: roll,
+            bus_id: busId,
+            staff_override: true,
+            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+          })
+        });
+        const data = await res.json();
+        alert(data.message || 'Staff override approved!');
+        document.getElementById('wrong-bus-alert-box').style.display = 'none';
+        document.getElementById('scanned-status').innerText = '✔ Supervised Boarding (Overridden)';
+        document.getElementById('scanned-status').className = 'text-success fw-bold';
+        addRecentScan('Student Overridden', roll, 'BOARD', 'OVERRIDDEN');
+      } catch (e) {
+        alert('Override error: ' + e.message);
+      }
+    }
+
+    function quickManual(roll) {
+      document.getElementById('manual-student-input').value = roll;
+      submitManualBoarding();
+    }
+
+    async function submitManualBoarding() {
+      const q = document.getElementById('manual-student-input').value.trim();
+      if (!q) {
+        alert('Please enter a student Roll Number or Admission ID.');
+        return;
+      }
+      const busId = document.getElementById('bus-terminal-select').value;
+      try {
+        const res = await fetch('/api/bus/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: q,
+            bus_id: busId,
+            manual_entry: true,
+            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+          })
+        });
+        const data = await res.json();
+        if (data.alert === 'WRONG_BUS') {
+          window.lastWrongRoll = q;
+          document.getElementById('wrong-bus-alert-box').style.display = 'block';
+          document.getElementById('wrong-bus-message-text').innerText = data.message;
+        } else {
+          document.getElementById('wrong-bus-alert-box').style.display = 'none';
+          document.getElementById('scanned-name').innerText = data.student?.name || q;
+          document.getElementById('scanned-roll').innerText = `Roll: ${data.student?.roll || q}`;
+          document.getElementById('scanned-status').innerText = '✔ Boarded (Manual ID Fallback)';
+          document.getElementById('scanned-status').className = 'text-success fw-bold';
+          document.getElementById('scanned-time').innerText = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          document.getElementById('scanned-sms-badge').innerText = 'Parent SMS Sent ✅';
+          addRecentScan(data.student?.name || q, q, 'BOARD', data.alert);
+          alert(data.message || 'Student boarded successfully!');
+        }
+      } catch (e) {
+        alert('Manual boarding error: ' + e.message);
+      }
+    }
+
+    async function terminalArriveStop() {
+      const busId = document.getElementById('bus-terminal-select').value;
+      try {
+        const res = await fetch('/api/bus/arrive-stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bus_id: busId, stop_name: 'Pitapalli Square' })
+        });
+        const data = await res.json();
+        alert(data.message || 'Stop arrival logged & parents notified!');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function terminalVerifyExit() {
+      const q = document.getElementById('manual-student-input').value.trim() || 'ROHAN-04';
+      const busId = document.getElementById('bus-terminal-select').value;
+      try {
+        const res = await fetch('/api/bus/verify-exit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roll_number: q, bus_id: busId, stop_name: 'Pitapalli Square' })
+        });
+        const data = await res.json();
+        alert(data.message || 'Student exit verified!');
+        addRecentScan(data.student?.name || q, q, 'DEBOARD', 'EXIT');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function terminalVerifyHandover() {
+      const q = document.getElementById('manual-student-input').value.trim() || 'ROHAN-04';
+      const otp = document.getElementById('terminal-otp-input').value.trim();
+      const busId = document.getElementById('bus-terminal-select').value;
+      try {
+        const res = await fetch('/api/bus/verify-handover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roll_number: q, bus_id: busId, guardian_code: otp, stop_name: 'Pitapalli Square' })
+        });
+        const data = await res.json();
+        if (data.verified) {
+          alert('✔ ' + data.message);
+          addRecentScan(data.student?.name || q, q, 'DEBOARD', 'HANDOVER');
+        } else {
+          alert('❌ ' + data.message);
+        }
+      } catch (e) {
+        alert('Error verifying handover: ' + e.message);
+      }
+    }
+
+    function simCameraMatch(roll) {
+      handleSuccessfulFaceMatch({
+        student_id: roll === 'ROHAN-04' ? 'STU-ROHAN' : 'STU-26081',
+        name: roll === 'ROHAN-04' ? 'Rohan Verma' : 'Munu Nial',
+        roll_number: roll
+      }, document.getElementById('camera-feed'));
+    }
+
+    function simWrongBusScan(roll) {
+      // Temporarily switch select to Bus #2 (Cuttack) to trigger wrong bus
+      document.getElementById('bus-terminal-select').value = '3';
+      handleSuccessfulFaceMatch({
+        student_id: 'STU-ROHAN',
+        name: 'Rohan Verma',
+        roll_number: 'ROHAN-04'
+      }, document.getElementById('camera-feed'));
+    }
+
+    function addRecentScan(name, roll, mode, alertType = 'NONE') {
       const container = document.getElementById('recent-scans-list');
       const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       const item = document.createElement('div');
@@ -438,9 +653,10 @@
       item.innerHTML = `
         <div>
           <strong>${name}</strong> <span class="text-muted">(${roll})</span>
+          ${alertType === 'WRONG_BUS' ? '<span class="badge bg-warning text-dark ms-1">Wrong Bus</span>' : ''}
         </div>
         <div class="text-end">
-          <span class="badge ${mode === 'BOARD' ? 'bg-success' : 'bg-danger'} py-1">${mode === 'BOARD' ? 'Boarded' : 'Dropped'}</span>
+          <span class="badge ${mode === 'BOARD' ? 'bg-success' : 'bg-primary'} py-1">${mode === 'BOARD' ? 'Boarded' : 'Deboarded'}</span>
           <span class="text-muted d-block" style="font-size: 0.7rem;">${time}</span>
         </div>
       `;

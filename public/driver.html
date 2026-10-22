@@ -138,6 +138,20 @@
       </div>
     </div>
 
+    <!-- TRIP MANAGEMENT & SOS CONTROLS -->
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <button id="btn-trip-start" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold shadow-sm" onclick="startTrip()">
+          <i class="fa-solid fa-play me-1 text-success"></i> Start Trip
+        </button>
+      </div>
+      <div class="col-6">
+        <button id="btn-trip-end" class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold shadow-sm" onclick="openEndTripModal()">
+          <i class="fa-solid fa-flag-checkered me-1 text-danger"></i> End Trip (Check)
+        </button>
+      </div>
+    </div>
+
     <!-- GPS STATUS & SPEEDOMETER CARD -->
     <div class="card card-custom p-4 text-center mb-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -172,14 +186,25 @@
     </div>
 
     <!-- MAIN START / STOP GPS TOGGLE BUTTON -->
-    <div class="mb-4">
+    <div class="mb-3">
       <button id="btn-toggle-gps" class="btn btn-gps-start w-100" onclick="toggleGpsTracking()">
         <i class="fa-solid fa-location-crosshairs me-2"></i>Start Live GPS Sharing
       </button>
-      <div class="text-center mt-2 small text-muted">
-        <i class="fa-solid fa-shield-heart text-primary me-1"></i>
-        Keep this screen open while driving so parents can track you in real-time.
+      <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+        <span class="small text-muted"><i class="fa-solid fa-shield-heart text-primary me-1"></i>Keeps parents updated in real-time.</span>
+        <button type="button" id="btn-simulate-drive" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="toggleDriveSimulation()">
+          <i class="fa-solid fa-route me-1"></i> Sim Drive
+        </button>
       </div>
+    </div>
+
+    <!-- EMERGENCY SOS PANIC BUTTON -->
+    <div class="mb-3">
+      <button class="btn btn-danger w-100 py-3 rounded-4 fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); font-size: 1.1rem;" onclick="triggerSosPanic()">
+        <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+        <span>EMERGENCY SOS PANIC BUTTON</span>
+      </button>
+      <div class="text-center small text-muted mt-1" style="font-size: 0.72rem;">Instantly alerts police, school admin, and dispatches SMS alerts to parents.</div>
     </div>
 
     <!-- PASSENGERS ROSTER & BOARDING CHECKLIST -->
@@ -187,13 +212,70 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h6 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-clipboard-user me-2"></i>Students on this Route</h6>
-          <span class="text-muted" style="font-size: 0.75rem;">Auto-checks when child enters door face camera</span>
+          <span class="text-muted" style="font-size: 0.75rem;">Verified custody checklist</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success" id="boarded-counter">0 / 0 Boarded</span>
       </div>
 
       <div id="student-roster-list" class="d-flex flex-column gap-2">
         <div class="text-center py-3 text-muted small">Loading passengers...</div>
+      </div>
+    </div>
+
+    <!-- MANDATORY SLEEPING CHILD INSPECTION MODAL -->
+    <div id="inspection-modal" class="modal fade" tabindex="-1" style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-custom p-4 border-0">
+          <div class="text-center mb-3">
+            <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-2" style="width: 60px; height: 60px;">
+              <i class="fa-solid fa-person-walking-dashed-line-arrow-right fa-2x"></i>
+            </div>
+            <h4 class="fw-bold brand-font text-danger mb-1">Mandatory Safety Walkthrough</h4>
+            <p class="text-muted small">End of Trip Child Inspection Checklist</p>
+          </div>
+
+          <div class="alert alert-warning small py-2 d-flex align-items-center mb-3">
+            <i class="fa-solid fa-shield-halved me-2 text-warning fa-lg"></i>
+            <span>Driver / Attendant MUST walk the entire aisle to confirm no sleeping or hidden children remain onboard before parking.</span>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="form-check p-2 bg-light rounded-3 border">
+              <input class="form-check-input ms-0 me-2" type="checkbox" id="check-aisle">
+              <label class="form-check-label small fw-bold text-dark" for="check-aisle">
+                1. Walked aisle from front to the very back seat
+              </label>
+            </div>
+            <div class="form-check p-2 bg-light rounded-3 border">
+              <input class="form-check-input ms-0 me-2" type="checkbox" id="check-under-seats">
+              <label class="form-check-label small fw-bold text-dark" for="check-under-seats">
+                2. Checked beneath and between all seat rows
+              </label>
+            </div>
+            <div class="form-check p-2 bg-light rounded-3 border">
+              <input class="form-check-input ms-0 me-2" type="checkbox" id="check-no-kids">
+              <label class="form-check-label small fw-bold text-dark" for="check-no-kids">
+                3. Confirmed ZERO sleeping children on the bus
+              </label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Inspection Notes / Remarks</label>
+            <input type="text" id="inspection-notes" class="form-control" value="All seats checked. Bus #4 completely empty and secured.">
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-bold" onclick="closeEndTripModal()">Cancel</button>
+            </div>
+            <div class="col-6">
+              <button type="button" class="btn btn-danger w-100 rounded-3 py-2 fw-bold" onclick="submitEndTripInspection()">
+                <i class="fa-solid fa-check-circle me-1"></i> Confirm & Close
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -383,8 +465,165 @@
 
     function onGpsError(err) {
       console.warn('GPS error:', err);
-      document.getElementById('gps-status-text').innerText = 'GPS Signal Weak / Denied ⚠️';
+      document.getElementById('gps-status-text').innerText = 'GPS Signal Weak / Denied ⚠️ (Use Sim Drive)';
+    }
+
+    // ==============================================================================
+    // TRIP LIFECYCLE & SLEEPING CHILD INSPECTION
+    // ==============================================================================
+    let currentTripId = null;
+
+    async function startTrip() {
+      try {
+        const res = await fetch('/api/bus/trips/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bus_id: currentBusId, trip_type: 'PICKUP' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentTripId = data.trip_id;
+          alert(`✔ Trip Started! Bus #${currentBusId} is now active on its route.`);
+          startGps();
+        } else {
+          alert('Could not start trip: ' + data.message);
+        }
+      } catch (e) {
+        alert('Error starting trip: ' + e.message);
+      }
+    }
+
+    function openEndTripModal() {
+      const modalEl = document.getElementById('inspection-modal');
+      modalEl.classList.add('show');
+      modalEl.style.display = 'block';
+    }
+
+    function closeEndTripModal() {
+      const modalEl = document.getElementById('inspection-modal');
+      modalEl.classList.remove('show');
+      modalEl.style.display = 'none';
+    }
+
+    async function submitEndTripInspection() {
+      const c1 = document.getElementById('check-aisle').checked;
+      const c2 = document.getElementById('check-under-seats').checked;
+      const c3 = document.getElementById('check-no-kids').checked;
+      const notes = document.getElementById('inspection-notes').value.trim();
+
+      if (!c1 || !c2 || !c3) {
+        alert('⚠️ Mandatory Safety Rule: You must check ALL 3 boxes confirming you physically inspected every seat for sleeping children!');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/bus/trips/end', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trip_id: currentTripId,
+            bus_id: currentBusId,
+            inspection_checklist_completed: 1,
+            inspection_notes: notes
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeEndTripModal();
+          stopGps();
+          if (simDriveInterval) clearInterval(simDriveInterval);
+          alert('✔ Trip Closed Safely!\n\nSleeping Child Walkthrough Inspection confirmed.\nZero children remain onboard.');
+          await loadBusDetails();
+        } else {
+          alert('Error closing trip: ' + data.message);
+        }
+      } catch (err) {
+        alert('Inspection submission error: ' + err.message);
+      }
+    }
+
+    // ==============================================================================
+    // EMERGENCY SOS PANIC TRIGGER
+    // ==============================================================================
+    async function triggerSosPanic() {
+      const confirmed = confirm('🚨 ACTIVATE EMERGENCY SOS PANIC ALERT?\n\nThis will immediately notify Police, School Administration, and send SMS alerts to all parents of students on this bus.');
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch('/api/bus/sos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bus_id: currentBusId,
+            notes: 'Driver pressed SOS panic button on mobile console.'
+          })
+        });
+        const data = await res.json();
+        alert(data.message || 'EMERGENCY SOS BROADCASTED TO AUTHORITIES!');
+      } catch (e) {
+        alert('SOS Broadcast error: ' + e.message);
+      }
+    }
+
+    // ==============================================================================
+    // SMOOTH ROAD MOVEMENT SIMULATION FOR DEMONSTRATIONS
+    // ==============================================================================
+    let isSimulatingDrive = false;
+    let simDriveInterval = null;
+    let simStep = 0;
+    const simWaypoints = [
+      { lat: 20.2961, lng: 85.8245, speed: 28 },
+      { lat: 20.2910, lng: 85.8190, speed: 38 },
+      { lat: 20.2850, lng: 85.8120, speed: 42 },
+      { lat: 20.2780, lng: 85.8050, speed: 35 },
+      { lat: 20.2710, lng: 85.7980, speed: 20 }
+    ];
+
+    function toggleDriveSimulation() {
+      const btn = document.getElementById('btn-simulate-drive');
+      if (!isSimulatingDrive) {
+        isSimulatingDrive = true;
+        btn.className = 'btn btn-secondary btn-sm rounded-pill text-white';
+        btn.innerHTML = '<i class="fa-solid fa-stop me-1"></i> Stop Sim';
+        document.getElementById('gps-pulse').style.display = 'inline-block';
+        document.getElementById('gps-status-text').innerText = 'Simulating Route Driving 🚌';
+
+        simDriveInterval = setInterval(async () => {
+          const pt = simWaypoints[simStep % simWaypoints.length];
+          simStep++;
+
+          document.getElementById('lat-display').innerText = pt.lat.toFixed(4);
+          document.getElementById('lng-display').innerText = pt.lng.toFixed(4);
+          document.getElementById('speed-display').innerText = pt.speed;
+          document.getElementById('acc-display').innerText = '±3m';
+
+          pingCounter++;
+          document.getElementById('ping-count').innerText = `${pingCounter} Pings Sent`;
+
+          await fetch('/api/bus/telemetry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bus_id: currentBusId,
+              lat: pt.lat,
+              lng: pt.lng,
+              speed: pt.speed,
+              heading: 45,
+              status: 'ON_ROUTE'
+            })
+          });
+        }, 2500);
+      } else {
+        isSimulatingDrive = false;
+        clearInterval(simDriveInterval);
+        btn.className = 'btn btn-outline-secondary btn-sm rounded-pill';
+        btn.innerHTML = '<i class="fa-solid fa-route me-1"></i> Sim Drive';
+        document.getElementById('gps-pulse').style.display = 'none';
+        document.getElementById('gps-status-text').innerText = 'Simulation Stopped';
+        document.getElementById('speed-display').innerText = '0';
+      }
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

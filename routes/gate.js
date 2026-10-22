@@ -5,14 +5,16 @@ const fs = require('fs');
 const { dbQuery, dbGet, dbRun } = require('../db/database');
 const { dispatchParentNotifications } = require('./notifications');
 
-// Connect to Authoritative MySQL Student & Hostel Master
+// Connect to Authoritative MySQL Student & Hostel Master (if available)
 let mysqlPool = null;
 try {
-  require('dotenv').config({ path: path.join(__dirname, '..', '..', 'campus-portal', '.env') });
-  const dbModule = require('../../campus-portal/config/db');
-  mysqlPool = dbModule.pool;
+  const portalDbPath = path.join(__dirname, '..', '..', 'campus-portal', 'config', 'db.js');
+  if (fs.existsSync(portalDbPath)) {
+    const dbModule = require(portalDbPath);
+    mysqlPool = dbModule.pool;
+  }
 } catch (e) {
-  console.warn('MySQL pool initialization error in gate.js:', e.message);
+  // SQLite standalone mode
 }
 
 // In-Memory Debounce Cache (prevents duplicate logs when student faces camera for multiple seconds)
