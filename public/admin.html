@@ -1324,26 +1324,45 @@
           </div>
         </div>
 
-        <!-- DETAILED ATTENDANCE AUDIT LOGS TABLE -->
+        <!-- VIEW MODE SELECTOR: SIDE-BY-SIDE DAILY ROSTER VS RAW AUDIT TIMELINE -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 bg-light p-2 rounded-3 border">
+          <div class="d-flex align-items-center gap-2">
+            <span class="small fw-bold text-dark me-1"><i class="fa-solid fa-table-columns text-primary me-1"></i> View Layout:</span>
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" id="btn-view-sidebyside" class="btn btn-primary fw-bold px-3 active shadow-sm" onclick="setAttendanceViewMode('roster')">
+                <i class="fa-solid fa-id-card-clip me-1"></i> Side-by-Side In / Out Roster
+              </button>
+              <button type="button" id="btn-view-timeline" class="btn btn-outline-secondary fw-bold px-3" onclick="setAttendanceViewMode('timeline')">
+                <i class="fa-solid fa-list-check me-1"></i> Raw Audit Log Timeline
+              </button>
+            </div>
+          </div>
+          <div class="small text-muted d-flex align-items-center gap-3 flex-wrap">
+            <span class="d-flex align-items-center gap-1"><span class="badge bg-success rounded-circle p-0" style="width: 9px; height: 9px;"></span> <span style="font-size: 0.76rem;">Safely Dropped</span></span>
+            <span class="d-flex align-items-center gap-1"><span class="badge bg-warning rounded-circle p-0" style="width: 9px; height: 9px;"></span> <span style="font-size: 0.76rem; font-weight: 600;" class="text-warning-emphasis">Still Onboard / Not Exited</span></span>
+            <span class="d-flex align-items-center gap-1"><span class="badge bg-secondary rounded-circle p-0" style="width: 9px; height: 9px;"></span> <span style="font-size: 0.76rem;">Absent</span></span>
+          </div>
+        </div>
+
+        <!-- ATTENDANCE TABLE VIEWPORT -->
         <div class="table-responsive">
           <table class="table table-custom table-hover align-middle">
-            <thead class="small text-uppercase text-muted">
+            <thead class="small text-uppercase text-muted" id="attendance-table-thead">
               <tr>
-                <th>Time & Day</th>
+                <th>#</th>
                 <th>Student Details</th>
                 <th>Class & Stop</th>
-                <th>Bus & Route</th>
-                <th>Event Type</th>
-                <th>Verification Method</th>
-                <th>Door Snapshot Proof</th>
-                <th>Status & Reason</th>
+                <th>Assigned Bus</th>
+                <th style="min-width: 175px;">🚌 Morning Boarding (IN)</th>
+                <th style="min-width: 200px;">🚪 Afternoon Exit / Drop (OUT)</th>
+                <th>Custody Status</th>
                 <th>Parent Notification</th>
-                <th>Terminal Device</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="attendance-report-tbody" class="small">
               <tr>
-                <td colspan="10" class="text-center py-4 text-muted">Loading day-wise attendance records...</td>
+                <td colspan="9" class="text-center py-4 text-muted">Loading day-wise attendance records...</td>
               </tr>
             </tbody>
           </table>
@@ -2227,6 +2246,23 @@
     // =========================================================================
     // DAY-WISE DAILY DATA MONITORING, MONTHLY PDF REPORTS & 30-DAY RETENTION
     // =========================================================================
+    let attendanceViewMode = 'roster';
+    let currentReportData = { daily_roster: [], detailed_logs: [] };
+
+    function setAttendanceViewMode(mode) {
+      attendanceViewMode = mode;
+      const btnRoster = document.getElementById('btn-view-sidebyside');
+      const btnTimeline = document.getElementById('btn-view-timeline');
+      if (mode === 'roster') {
+        if (btnRoster) btnRoster.className = 'btn btn-primary fw-bold px-3 active shadow-sm';
+        if (btnTimeline) btnTimeline.className = 'btn btn-outline-secondary fw-bold px-3';
+      } else {
+        if (btnTimeline) btnTimeline.className = 'btn btn-primary fw-bold px-3 active shadow-sm';
+        if (btnRoster) btnRoster.className = 'btn btn-outline-secondary fw-bold px-3';
+      }
+      renderAttendanceCurrentView();
+    }
+
     async function loadAttendanceReport() {
       const busFilter = document.getElementById('report-bus-filter')?.value || 'ALL';
       let dateVal = document.getElementById('report-date-filter')?.value;
@@ -2258,7 +2294,8 @@
           document.getElementById('rep-card-count').innerText = s.id_card_verification_count || 0;
           document.getElementById('rep-manual-count').innerText = s.manual_verification_count || 0;
 
-          renderAttendanceReportTable(data.detailed_logs || []);
+          currentReportData = data;
+          renderAttendanceCurrentView();
         }
       } catch (err) {
         console.error('Error fetching day-wise attendance report:', err);
@@ -2268,7 +2305,188 @@
       loadRetentionDiagnostics();
     }
 
-    function renderAttendanceReportTable(logs) {
+    function renderAttendanceCurrentView() {
+      const thead = document.getElementById('attendance-table-thead');
+      if (!thead) return;
+
+      if (attendanceViewMode === 'roster') {
+        thead.innerHTML = `
+          <tr>
+            <th>#</th>
+            <th>Student Details</th>
+            <th>Class & Stop</th>
+            <th>Assigned Bus</th>
+            <th style="min-width: 175px;">🚌 Morning Boarding (IN)</th>
+            <th style="min-width: 200px;">🚪 Afternoon Exit / Drop (OUT)</th>
+            <th>Custody Status</th>
+            <th>Parent Notification</th>
+            <th>Actions</th>
+          </tr>
+        `;
+        renderDailyRosterTable(currentReportData.daily_roster || []);
+      } else {
+        thead.innerHTML = `
+          <tr>
+            <th>Time & Day</th>
+            <th>Student Details</th>
+            <th>Class & Stop</th>
+            <th>Bus & Route</th>
+            <th>Event Type</th>
+            <th>Verification Method</th>
+            <th>Door Snapshot Proof</th>
+            <th>Status & Reason</th>
+            <th>Parent Notification</th>
+            <th>Terminal Device</th>
+          </tr>
+        `;
+        renderTimelineTable(currentReportData.detailed_logs || []);
+      }
+    }
+
+    function renderDailyRosterTable(roster) {
+      const tbody = document.getElementById('attendance-report-tbody');
+      if (!tbody) return;
+
+      if (!roster || roster.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No student daily records found for this date.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = roster.map((s, index) => {
+        const studentPhoto = s.photo_path || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=100';
+
+        // 1. Morning Boarding (IN) Column
+        let morningHtml = '';
+        if (s.boarding) {
+          const bTime = s.boarding.time ? (s.boarding.time.split(' ')[1] || s.boarding.time) : 'Boarded';
+          const bPhoto = s.boarding.photo_url || studentPhoto;
+          const safeTitle = encodeURIComponent(`${s.name} (${s.roll_number}) - Morning Boarding`);
+          const safeMeta = encodeURIComponent(`Boarded on ${s.boarding.time || 'Today'} at ${s.boarding.bus_number || 'Bus'} door`);
+          morningHtml = `
+            <div class="d-flex align-items-center gap-2">
+              <div class="position-relative" style="cursor: pointer;" onclick="openDoorProofSnapshot('${bPhoto}', '${safeTitle}', '${safeMeta}')" title="Click to inspect door camera photo">
+                <img src="${bPhoto}" class="rounded border shadow-sm" style="width: 38px; height: 32px; object-fit: cover;" onerror="this.onerror=null; this.src='${studentPhoto}'">
+                <span class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 12px; height: 12px; font-size: 7px;">
+                  <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </span>
+              </div>
+              <div>
+                <div class="font-monospace fw-bold text-success">${bTime}</div>
+                <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.68rem;">
+                  <i class="fa-solid fa-camera me-1"></i> ${s.boarding.method}
+                </span>
+              </div>
+            </div>
+          `;
+        } else {
+          morningHtml = `
+            <span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-circle-minus me-1"></i> Not Boarded Today
+            </span>
+          `;
+        }
+
+        // 2. Afternoon Exit / Drop (OUT) Column
+        let exitHtml = '';
+        if (s.exit) {
+          const eTime = s.exit.time ? (s.exit.time.split(' ')[1] || s.exit.time) : 'Exited';
+          const ePhoto = s.exit.photo_url || studentPhoto;
+          const safeTitle = encodeURIComponent(`${s.name} (${s.roll_number}) - Afternoon Drop`);
+          const safeMeta = encodeURIComponent(`Exited on ${s.exit.time || 'Today'} at ${s.exit.bus_number || 'Bus'}`);
+          exitHtml = `
+            <div class="d-flex align-items-center gap-2">
+              <div class="position-relative" style="cursor: pointer;" onclick="openDoorProofSnapshot('${ePhoto}', '${safeTitle}', '${safeMeta}')" title="Click to inspect door camera photo">
+                <img src="${ePhoto}" class="rounded border shadow-sm" style="width: 38px; height: 32px; object-fit: cover;" onerror="this.onerror=null; this.src='${studentPhoto}'">
+                <span class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 12px; height: 12px; font-size: 7px;">
+                  <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </span>
+              </div>
+              <div>
+                <div class="font-monospace fw-bold text-info">${eTime}</div>
+                <span class="badge bg-info-subtle text-info border" style="font-size: 0.68rem;">
+                  <i class="fa-solid ${s.exit.guardian_handover ? 'fa-handshake' : 'fa-door-open'} me-1"></i> ${s.exit.guardian_handover ? 'GUARDIAN DROP' : s.exit.method}
+                </span>
+              </div>
+            </div>
+          `;
+        } else if (s.boarding) {
+          // KEY REQUIREMENT: If boarded in morning but not yet out, show Still Onboard / Not Exited Yet!
+          exitHtml = `
+            <span class="badge bg-warning text-dark border border-warning shadow-sm px-2 py-1 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-bus-simple"></i>
+              <span>Still Onboard / Not Exited Yet</span>
+            </span>
+          `;
+        } else {
+          exitHtml = `
+            <span class="text-muted small" style="font-size: 0.72rem;">
+              <i class="fa-solid fa-minus me-1"></i> Not Exited
+            </span>
+          `;
+        }
+
+        // 3. Custody Status Badge
+        let statusBadge = '';
+        if (s.custody_status === 'COMPLETED') {
+          statusBadge = '<span class="badge bg-success-subtle text-success border border-success fw-bold px-2 py-1"><i class="fa-solid fa-circle-check me-1"></i> Safely Dropped</span>';
+        } else if (s.custody_status === 'STILL_ONBOARD') {
+          statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning fw-bold px-2 py-1"><i class="fa-solid fa-hourglass-half me-1"></i> In Transit (Onboard)</span>';
+        } else if (s.custody_status === 'EXIT_ONLY') {
+          statusBadge = '<span class="badge bg-info-subtle text-info border border-info px-2 py-1">Direct Exit</span>';
+        } else {
+          statusBadge = '<span class="badge bg-light text-secondary border px-2 py-1">Absent</span>';
+        }
+
+        // 4. Parent SMS Status
+        let smsHtml = '';
+        if (s.boarding && s.exit) {
+          smsHtml = '<span class="badge bg-success-subtle text-success border border-success" style="font-size: 0.70rem;"><i class="fa-solid fa-check-double me-1"></i> In & Out SMS Sent</span>';
+        } else if (s.boarding) {
+          smsHtml = `
+            <div>
+              <span class="badge bg-success-subtle text-success border border-success d-block mb-1" style="font-size: 0.68rem;"><i class="fa-solid fa-check me-1"></i> Boarding SMS</span>
+              <span class="badge bg-light text-muted border d-block" style="font-size: 0.65rem;">⏳ Exit SMS Pending</span>
+            </div>
+          `;
+        } else {
+          smsHtml = '<span class="text-muted small">—</span>';
+        }
+
+        return `
+          <tr>
+            <td class="text-muted fw-bold">${index + 1}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="${studentPhoto}" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1544717305-2782549b5136?w=100'">
+                <div>
+                  <strong class="d-block text-dark">${s.name}</strong>
+                  <span class="text-muted" style="font-size: 0.72rem;">Roll: <span class="fw-semibold text-secondary">${s.roll_number}</span></span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="fw-semibold text-dark">${s.branch || 'Class V'}</span>
+              <span class="text-muted d-block" style="font-size: 0.72rem;"><i class="fa-solid fa-location-dot me-1 text-danger"></i>${s.pickup_stop_name}</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border fw-bold">${s.bus_number || 'Bus #4'}</span>
+              <span class="text-muted d-block" style="font-size: 0.70rem;">${s.route_name || 'Khordha'}</span>
+            </td>
+            <td>${morningHtml}</td>
+            <td>${exitHtml}</td>
+            <td>${statusBadge}</td>
+            <td>${smsHtml}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" onclick="openPrintableIdCard('${s.student_id}')" style="font-size: 0.75rem;" title="View Student Transport ID Card">
+                <i class="fa-solid fa-id-card me-1"></i> Card
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderTimelineTable(logs) {
       const tbody = document.getElementById('attendance-report-tbody');
       if (!tbody) return;
 

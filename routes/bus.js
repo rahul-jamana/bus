@@ -1052,6 +1052,151 @@ router.get('/attendance-report', async (req, res) => {
       }
     });
 
+    // 4. Build Side-by-Side Student Daily Custody Roster
+    let studentsQuery = `
+      SELECT 
+        s.id, s.name, s.roll_number, s.student_id, s.branch, s.section, 
+        s.photo_path, s.pickup_stop_name, s.drop_stop_name,
+        br.bus_id as assigned_bus_id,
+        b.bus_number, b.route_name
+      FROM students s
+      JOIN bus_registrations br ON s.id = br.student_id AND br.is_active = 1
+      JOIN buses b ON br.bus_id = b.id
+    `;
+    let studentParams = [];
+    if (bus_id && bus_id !== 'ALL') {
+      studentsQuery += ' WHERE br.bus_id = ?';
+      studentParams.push(bus_id);
+    }
+    studentsQuery += ' ORDER BY s.name ASC';
+    const assignedStudents = await dbQuery(studentsQuery, studentParams);
+
+    // Group logs by student_id or roll_number
+    const logsByStudent = {};
+    logs.forEach(l => {
+      const sKey = String(l.student_id || l.roll_number);
+      if (!logsByStudent[sKey]) logsByStudent[sKey] = [];
+      logsByStudent[sKey].push(l);
+      if (l.roll_number && !logsByStudent[l.roll_number]) {
+        logsByStudent[l.roll_number] = logsByStudent[sKey];
+      }
+    });
+
+    const dailyRoster = [];
+    const processedStudentIds = new Set();
+
+    // Map each assigned student
+    for (const student of assignedStudents) {
+      processedStudentIds.add(student.id);
+      const studentLogs = logsByStudent[String(student.id)] || logsByStudent[student.roll_number] || [];
+      
+      // Find latest or verified morning boarding
+      const boardLog = studentLogs.find(l => (l.log_type === 'BOARD' || l.stage === 'BOARD') && l.verification_status !== 'FAILED')
+                    || studentLogs.find(l => l.log_type === 'BOARD' || l.stage === 'BOARD');
+
+      // Find latest or verified afternoon exit / handover
+      const exitLog = studentLogs.find(l => (l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT' || l.log_type === 'GUARDIAN_HANDOVER') && l.verification_status !== 'FAILED')
+                   || studentLogs.find(l => l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT' || l.log_type === 'GUARDIAN_HANDOVER');
+
+      let custodyStatus = 'NOT_BOARDED';
+      if (boardLog && exitLog) {
+        custodyStatus = 'COMPLETED';
+      } else if (boardLog && !exitLog) {
+        custodyStatus = 'STILL_ONBOARD';
+      } else if (!boardLog && exitLog) {
+        custodyStatus = 'EXIT_ONLY';
+      }
+
+      dailyRoster.push({
+        student_id: student.id,
+        student_code: student.student_id,
+        roll_number: student.roll_number,
+        name: student.name,
+        branch: student.branch,
+        section: student.section,
+        photo_path: student.photo_path,
+        pickup_stop_name: student.pickup_stop_name || 'Pitapalli Square',
+        bus_id: student.assigned_bus_id,
+        bus_number: student.bus_number,
+        route_name: student.route_name,
+        boarding: boardLog ? {
+          log_id: boardLog.id,
+          time: boardLog.log_time,
+          method: boardLog.verification_method || 'FACE',
+          status: boardLog.verification_status || 'VERIFIED',
+          photo_url: boardLog.photo_url || student.photo_path,
+          bus_number: boardLog.bus_number || student.bus_number,
+          route_name: boardLog.route_name || student.route_name,
+          staff_override: boardLog.staff_override,
+          confidence: boardLog.face_confidence
+        } : null,
+        exit: exitLog ? {
+          log_id: exitLog.id,
+          time: exitLog.log_time,
+          method: exitLog.verification_method || 'FACE',
+          status: exitLog.verification_status || 'VERIFIED',
+          photo_url: exitLog.photo_url || student.photo_path,
+          bus_number: exitLog.bus_number || student.bus_number,
+          route_name: exitLog.route_name || student.route_name,
+          guardian_handover: exitLog.log_type === 'GUARDIAN_HANDOVER'
+        } : null,
+        custody_status: custodyStatus,
+        parent_notified_board: boardLog ? (boardLog.parent_notified == 1) : false,
+        parent_notified_exit: exitLog ? (exitLog.parent_notified == 1) : false
+      });
+    }
+
+    // Also include any other student who logged events today
+    logs.forEach(l => {
+      if (l.student_id && !processedStudentIds.has(l.student_id)) {
+        processedStudentIds.add(l.student_id);
+        const studentLogs = logsByStudent[String(l.student_id)] || [];
+        const boardLog = studentLogs.find(x => x.log_type === 'BOARD' || x.stage === 'BOARD');
+        const exitLog = studentLogs.find(x => x.log_type === 'STUDENT_EXIT' || x.stage === 'EXIT' || x.log_type === 'GUARDIAN_HANDOVER');
+
+        let custodyStatus = 'NOT_BOARDED';
+        if (boardLog && exitLog) custodyStatus = 'COMPLETED';
+        else if (boardLog && !exitLog) custodyStatus = 'STILL_ONBOARD';
+        else if (!boardLog && exitLog) custodyStatus = 'EXIT_ONLY';
+
+        dailyRoster.push({
+          student_id: l.student_id,
+          student_code: l.roll_number,
+          roll_number: l.roll_number,
+          name: l.student_name || 'Guest / Transferred',
+          branch: l.branch || 'General',
+          section: l.section || 'A',
+          photo_path: l.photo_path,
+          pickup_stop_name: 'Pitapalli Square',
+          bus_id: l.bus_id,
+          bus_number: l.bus_number || 'Bus',
+          route_name: l.route_name || 'Fleet',
+          boarding: boardLog ? {
+            log_id: boardLog.id,
+            time: boardLog.log_time,
+            method: boardLog.verification_method || 'FACE',
+            status: boardLog.verification_status || 'VERIFIED',
+            photo_url: boardLog.photo_url,
+            bus_number: boardLog.bus_number,
+            route_name: boardLog.route_name,
+            staff_override: boardLog.staff_override
+          } : null,
+          exit: exitLog ? {
+            log_id: exitLog.id,
+            time: exitLog.log_time,
+            method: exitLog.verification_method || 'FACE',
+            status: exitLog.verification_status || 'VERIFIED',
+            photo_url: exitLog.photo_url,
+            bus_number: exitLog.bus_number,
+            route_name: exitLog.route_name
+          } : null,
+          custody_status: custodyStatus,
+          parent_notified_board: boardLog ? (boardLog.parent_notified == 1) : false,
+          parent_notified_exit: exitLog ? (exitLog.parent_notified == 1) : false
+        });
+      }
+    });
+
     res.json({
       success: true,
       date,
@@ -1067,6 +1212,7 @@ router.get('/attendance-report', async (req, res) => {
         failed_verification_attempts: failedAttempts,
         offline_pending_count: offlineSyncedCount
       },
+      daily_roster: dailyRoster,
       detailed_logs: logs
     });
   } catch (err) {

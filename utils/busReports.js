@@ -419,15 +419,13 @@ async function generateDailyAttendancePdf(res, { date, busId }) {
   const tableTopY = 162;
   const columns = [
     { label: '#', width: 26, align: 'center' },
-    { label: 'Time', width: 80, align: 'left' },
-    { label: 'Student Name', width: 130, align: 'left' },
-    { label: 'Roll Number', width: 80, align: 'left' },
-    { label: 'Class / Branch', width: 85, align: 'left' },
-    { label: 'Bus & Route', width: 110, align: 'left' },
-    { label: 'Event', width: 80, align: 'center' },
-    { label: 'Method', width: 70, align: 'center' },
-    { label: 'Status', width: 65, align: 'center' },
-    { label: 'Parent SMS', width: 75, align: 'center' }
+    { label: 'Student Name', width: 125, align: 'left' },
+    { label: 'Roll No', width: 70, align: 'left' },
+    { label: 'Class & Stop', width: 95, align: 'left' },
+    { label: 'Bus & Route', width: 105, align: 'left' },
+    { label: 'Morning Boarding (IN)', width: 120, align: 'left' },
+    { label: 'Afternoon Exit (OUT)', width: 125, align: 'left' },
+    { label: 'Custody Status', width: 115, align: 'center' }
   ];
 
   function drawTableHeader(y) {
@@ -446,11 +444,38 @@ async function generateDailyAttendancePdf(res, { date, busId }) {
   drawTableHeader(currentY);
   currentY += 20;
 
-  if (logs.length === 0) {
+  // Group logs into student daily roster
+  const studentMap = new Map();
+  logs.forEach(l => {
+    const sId = l.student_id || l.roll_number;
+    if (!studentMap.has(sId)) {
+      studentMap.set(sId, {
+        student_name: l.student_name || 'Student',
+        roll_number: l.roll_number || 'N/A',
+        branch: l.branch || 'Class V',
+        pickup_stop: l.pickup_stop_name || 'Pitapalli Square',
+        bus_number: l.bus_number || 'Bus #4',
+        route_name: l.route_name || 'Khordha',
+        boarding: null,
+        exit: null
+      });
+    }
+    const sRec = studentMap.get(sId);
+    if ((l.log_type === 'BOARD' || l.stage === 'BOARD') && !sRec.boarding) {
+      sRec.boarding = l;
+    }
+    if ((l.log_type === 'STUDENT_EXIT' || l.stage === 'EXIT' || l.log_type === 'GUARDIAN_HANDOVER') && !sRec.exit) {
+      sRec.exit = l;
+    }
+  });
+
+  const rosterList = Array.from(studentMap.values());
+
+  if (rosterList.length === 0) {
     doc.fillColor('#64748b').fontSize(9).font('Helvetica-Oblique')
       .text(`No transport records found for ${targetDate}.`, 30, currentY + 25, { align: 'center', width: contentWidth });
   } else {
-    logs.forEach((row, index) => {
+    rosterList.forEach((row, index) => {
       if (currentY > pageHeight - 55) {
         doc.addPage();
         drawPageHeader();
@@ -461,63 +486,73 @@ async function generateDailyAttendancePdf(res, { date, busId }) {
 
       const rowBg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
       doc.save();
-      doc.rect(30, currentY, contentWidth, 18).fill(rowBg);
-      doc.rect(30, currentY + 18, contentWidth, 0.5).fill('#e2e8f0');
+      doc.rect(30, currentY, contentWidth, 20).fill(rowBg);
+      doc.rect(30, currentY + 20, contentWidth, 0.5).fill('#e2e8f0');
 
       let curX = 30;
       doc.fillColor('#334155').fontSize(7.5).font('Helvetica');
 
       // #
-      doc.text(String(index + 1), curX + 2, currentY + 5, { width: columns[0].width - 4, align: columns[0].align });
+      doc.text(String(index + 1), curX + 2, currentY + 6, { width: columns[0].width - 4, align: columns[0].align });
       curX += columns[0].width;
 
-      // Time
-      const timeClean = row.log_time ? (row.log_time.split(' ')[1] || row.log_time) : 'N/A';
-      doc.font('Helvetica-Bold').text(timeClean, curX + 2, currentY + 5, { width: columns[1].width - 4, align: columns[1].align });
+      // Student Name
+      doc.font('Helvetica-Bold').fillColor('#0f172a').text(row.student_name, curX + 2, currentY + 6, { width: columns[1].width - 4, align: columns[1].align });
       curX += columns[1].width;
 
-      // Student Name
-      doc.font('Helvetica-Bold').fillColor('#0f172a').text(row.student_name || 'Student', curX + 2, currentY + 5, { width: columns[2].width - 4, align: columns[2].align });
+      // Roll Number
+      doc.font('Helvetica').fillColor('#475569').text(row.roll_number, curX + 2, currentY + 6, { width: columns[2].width - 4, align: columns[2].align });
       curX += columns[2].width;
 
-      // Roll Number
-      doc.font('Helvetica').fillColor('#475569').text(row.roll_number || 'N/A', curX + 2, currentY + 5, { width: columns[3].width - 4, align: columns[3].align });
+      // Class & Stop
+      const classStop = `${row.branch} (${row.pickup_stop})`;
+      doc.text(classStop, curX + 2, currentY + 6, { width: columns[3].width - 4, align: columns[3].align });
       curX += columns[3].width;
 
-      // Class
-      doc.text(row.branch || 'Class V', curX + 2, currentY + 5, { width: columns[4].width - 4, align: columns[4].align });
+      // Bus & Route
+      const busText = `${row.bus_number} (${row.route_name})`;
+      doc.text(busText, curX + 2, currentY + 6, { width: columns[4].width - 4, align: columns[4].align });
       curX += columns[4].width;
 
-      // Bus & Route
-      const busText = `${row.bus_number || 'Bus'} (${row.route_name || 'Fleet'})`;
-      doc.text(busText, curX + 2, currentY + 5, { width: columns[5].width - 4, align: columns[5].align });
+      // Morning Boarding (IN)
+      if (row.boarding) {
+        const bTime = row.boarding.log_time ? (row.boarding.log_time.split(' ')[1] || row.boarding.log_time) : 'Recorded';
+        const bMeth = row.boarding.verification_method || 'FACE';
+        doc.font('Helvetica-Bold').fillColor('#059669')
+          .text(`${bTime} [${bMeth}]`, curX + 2, currentY + 6, { width: columns[5].width - 4, align: columns[5].align });
+      } else {
+        doc.font('Helvetica').fillColor('#94a3b8')
+          .text('Not Boarded', curX + 2, currentY + 6, { width: columns[5].width - 4, align: columns[5].align });
+      }
       curX += columns[5].width;
 
-      // Event
-      const isExit = row.log_type === 'STUDENT_EXIT' || row.stage === 'EXIT' || row.log_type === 'GUARDIAN_HANDOVER';
-      doc.font('Helvetica-Bold').fillColor(isExit ? '#0d9488' : '#059669')
-        .text(isExit ? 'EXIT / DROP' : 'BOARDING', curX + 2, currentY + 5, { width: columns[6].width - 4, align: columns[6].align });
+      // Afternoon Exit / Drop (OUT)
+      if (row.exit) {
+        const eTime = row.exit.log_time ? (row.exit.log_time.split(' ')[1] || row.exit.log_time) : 'Recorded';
+        const eMeth = row.exit.verification_method || 'FACE';
+        doc.font('Helvetica-Bold').fillColor('#0d9488')
+          .text(`${eTime} [${eMeth}]`, curX + 2, currentY + 6, { width: columns[6].width - 4, align: columns[6].align });
+      } else if (row.boarding) {
+        // Boarded but not exited yet!
+        doc.font('Helvetica-Bold').fillColor('#d97706')
+          .text('Still Onboard / In Transit', curX + 2, currentY + 6, { width: columns[6].width - 4, align: columns[6].align });
+      } else {
+        doc.font('Helvetica').fillColor('#94a3b8')
+          .text('Not Exited', curX + 2, currentY + 6, { width: columns[6].width - 4, align: columns[6].align });
+      }
       curX += columns[6].width;
 
-      // Method
-      const meth = row.verification_method || 'FACE';
-      let methColor = '#2563eb';
-      if (meth === 'ID_CARD') methColor = '#059669';
-      if (meth === 'MANUAL') methColor = '#d97706';
-      doc.fillColor(methColor).text(meth, curX + 2, currentY + 5, { width: columns[7].width - 4, align: columns[7].align });
-      curX += columns[7].width;
-
-      // Status
-      const stat = row.verification_status || 'VERIFIED';
-      const statColor = stat === 'FAILED' ? '#e11d48' : (stat === 'OVERRIDDEN' ? '#d97706' : '#059669');
-      doc.fillColor(statColor).text(stat, curX + 2, currentY + 5, { width: columns[8].width - 4, align: columns[8].align });
-      curX += columns[8].width;
-
-      // Parent SMS
-      doc.font('Helvetica').fillColor('#059669').text('Delivered', curX + 2, currentY + 5, { width: columns[9].width - 4, align: columns[9].align });
+      // Custody Status
+      if (row.boarding && row.exit) {
+        doc.font('Helvetica-Bold').fillColor('#059669').text('Safely Dropped', curX + 2, currentY + 6, { width: columns[7].width - 4, align: columns[7].align });
+      } else if (row.boarding && !row.exit) {
+        doc.font('Helvetica-Bold').fillColor('#d97706').text('Still Onboard', curX + 2, currentY + 6, { width: columns[7].width - 4, align: columns[7].align });
+      } else {
+        doc.font('Helvetica').fillColor('#64748b').text('Absent', curX + 2, currentY + 6, { width: columns[7].width - 4, align: columns[7].align });
+      }
 
       doc.restore();
-      currentY += 19;
+      currentY += 21;
     });
   }
 
