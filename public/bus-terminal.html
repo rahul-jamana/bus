@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bus Door AI Terminal — SchoolSafe Face Boarding</title>
+  <title>Bus Door AI Terminal — SchoolSafe Face Boarding Gate</title>
 
   <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
@@ -17,28 +17,61 @@
 
   <style>
     :root {
-      --primary-blue: #0284c7;
-      --bg-sky: #f0f9ff;
-      --green: #10b981;
-      --red: #ef4444;
+      --primary: #1d4ed8;
+      --navy: #0f172a;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --emerald: #059669;
+      --emerald-bg: #ecfdf5;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08);
     }
+
+    * { box-sizing: border-box; }
 
     body {
-      background-color: var(--bg-sky);
-      font-family: 'Inter', sans-serif;
-      color: #0f172a;
-      overflow-x: hidden;
+      background-color: var(--bg);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--slate-800);
+      margin: 0;
+      padding-bottom: 40px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4, h5, .brand-font {
+    h1, h2, h3, h4, h5, h6, .brand-font {
       font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
     }
 
     .terminal-nav {
       background: #ffffff;
-      border-bottom: 2px solid #bae6fd;
-      padding: 14px 20px;
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 14px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
     .scanner-viewport {
@@ -46,10 +79,10 @@
       width: 100%;
       height: 480px;
       background: #0f172a;
-      border-radius: 20px;
+      border-radius: var(--radius-xl);
       overflow: hidden;
       border: 3px solid #38bdf8;
-      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.2);
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.25);
     }
 
     #camera-feed, #scanner-canvas {
@@ -71,7 +104,7 @@
       border: 2px dashed rgba(56, 189, 248, 0.6);
       border-radius: 40px;
       pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.5);
       z-index: 5;
     }
 
@@ -84,29 +117,34 @@
     }
 
     .scan-mode-btn.active-boarding {
-      background-color: #10b981;
+      background-color: var(--emerald);
       color: white;
-      border-color: #059669;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      border-color: #047857;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
     }
 
     .scan-mode-btn.active-dropoff {
-      background-color: #ef4444;
+      background-color: var(--rose);
       color: white;
-      border-color: #dc2626;
-      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+      border-color: #be123c;
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
+    }
+
+    .card-surface {
+      background: var(--card-bg);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      transition: all 0.2s ease;
     }
 
     .verification-card {
-      background: #ffffff;
-      border: 2px solid #bae6fd;
-      border-radius: 18px;
-      box-shadow: 0 8px 25px rgba(2, 132, 199, 0.12);
-      animation: popIn 0.3s ease;
+      animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes popIn {
-      0% { transform: scale(0.9); opacity: 0; }
+      0% { transform: scale(0.96); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
   </style>
@@ -114,14 +152,14 @@
 <body>
 
   <!-- TERMINAL NAVIGATION -->
-  <div class="terminal-nav d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center">
-      <div class="bg-primary text-white p-2 rounded-3 me-2">
+  <nav class="terminal-nav d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-mark">
         <i class="fa-solid fa-camera fa-lg"></i>
       </div>
       <div>
-        <h5 class="fw-bold brand-font text-primary mb-0">Bus Door AI Terminal</h5>
-        <span class="text-muted small" style="font-size: 0.75rem;">VisioFace High-Speed Biometric Gate</span>
+        <h5 class="fw-bold brand-font text-dark mb-0 lh-1">Bus Door AI Terminal</h5>
+        <span class="text-muted small" style="font-size: 0.78rem;">VisioFace High-Speed Biometric Gate</span>
       </div>
     </div>
 
@@ -130,19 +168,19 @@
       <button id="mode-boarding-btn" class="scan-mode-btn active-boarding" onclick="setScanMode('BOARD')">
         <i class="fa-solid fa-person-walking-arrow-right me-1"></i> Morning Boarding
       </button>
-      <button id="mode-dropoff-btn" class="scan-mode-btn btn-light" onclick="setScanMode('DEBOARD')">
+      <button id="mode-dropoff-btn" class="scan-mode-btn btn-light border" onclick="setScanMode('DEBOARD')">
         <i class="fa-solid fa-graduation-cap me-1"></i> Drop-Off Exit
       </button>
     </div>
 
     <div>
-      <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary" style="width: 170px;">
+      <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary rounded-pill px-3 py-2" style="width: 180px;">
         <option value="1">Bus #4 — Khordha</option>
         <option value="2">Bus #1 — Bhubaneswar</option>
         <option value="3">Bus #2 — Cuttack</option>
       </select>
     </div>
-  </div>
+  </nav>
 
   <div class="container py-4">
     <div class="row g-4 justify-content-center">
@@ -166,22 +204,22 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
-          <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="startScannerCamera()">
+          <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="startScannerCamera()">
             <i class="fa-solid fa-rotate me-1"></i> Restart Camera
           </button>
           <span class="small text-muted" id="ai-face-count">0 Enrolled Students In Memory</span>
-          <a href="/admin" class="btn btn-link text-primary btn-sm">Admin Portal →</a>
+          <a href="/admin" class="btn btn-link text-primary btn-sm text-decoration-none fw-bold">Admin Portal →</a>
         </div>
       </div>
 
       <!-- INSTANT VERIFICATION RESULT & PHOTO PROOF CARD -->
       <div class="col-lg-5">
-        <div class="verification-card p-4 text-center" id="verification-card">
+        <div class="card-surface verification-card text-center mb-3" id="verification-card">
           <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 70px; height: 70px;" id="status-icon-circle">
             <i class="fa-solid fa-user-check fa-2x"></i>
           </div>
 
-          <h4 class="fw-bold brand-font text-primary mb-1" id="scanned-name">Awaiting Student</h4>
+          <h4 class="fw-bold brand-font text-dark mb-1" id="scanned-name">Awaiting Student</h4>
           <p class="text-muted small mb-3" id="scanned-roll">Stand in front of door camera</p>
 
           <div class="p-3 bg-light rounded-3 border mb-3 text-start">
@@ -224,7 +262,7 @@
         </div>
 
         <!-- 3-STAGE DROP-OFF & GUARDIAN HANDOVER PANEL (Shown in Drop-Off mode) -->
-        <div id="dropoff-handover-panel" class="card p-3 border rounded-3 mt-3 bg-white" style="display: none;">
+        <div id="dropoff-handover-panel" class="card-surface p-3 mb-3" style="display: none;">
           <span class="small fw-bold text-danger mb-2 d-block"><i class="fa-solid fa-shield-cat me-1"></i> 3-Stage Drop-Off & Guardian Handover</span>
           <div class="d-grid gap-2">
             <button class="btn btn-outline-primary btn-sm fw-bold text-start p-2" onclick="terminalArriveStop()">
@@ -244,7 +282,7 @@
         </div>
 
         <!-- MANUAL ERP ID CARD FALLBACK (Safety Rule: Never strand a child if face fails!) -->
-        <div class="card p-3 border rounded-3 mt-3 bg-white">
+        <div class="card-surface p-3 mb-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="small fw-bold text-primary"><i class="fa-solid fa-id-card-clip me-1"></i> Manual ERP ID Fallback</span>
             <span class="badge bg-light text-secondary border">Safety Fallback</span>
@@ -261,11 +299,11 @@
         </div>
 
         <!-- RECENT BOARDING LOGS -->
-        <div class="card p-3 border rounded-3 mt-3 bg-white">
+        <div class="card-surface p-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="fw-bold text-primary mb-0 small text-uppercase"><i class="fa-solid fa-clock-rotate-left me-1"></i> Today's Door Scans</h6>
+            <h6 class="fw-bold text-dark mb-0 small text-uppercase"><i class="fa-solid fa-clock-rotate-left text-primary me-1"></i> Today's Door Scans</h6>
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary py-0 px-2 dropdown-toggle" style="font-size: 0.72rem;" data-bs-toggle="dropdown">Quick Demo Scan</button>
+              <button class="btn btn-sm btn-outline-secondary py-0 px-2 dropdown-toggle rounded-pill" style="font-size: 0.72rem;" data-bs-toggle="dropdown">Quick Demo Scan</button>
               <ul class="dropdown-menu dropdown-menu-end small shadow border-0">
                 <li><a class="dropdown-item" href="javascript:void(0)" onclick="simCameraMatch('ROHAN-04')">Scan Rohan Verma (Normal)</a></li>
                 <li><a class="dropdown-item" href="javascript:void(0)" onclick="simWrongBusScan('ROHAN-04')">Scan Rohan (Wrong Bus Alert)</a></li>
@@ -309,13 +347,13 @@
 
       if (mode === 'BOARD') {
         bBtn.className = 'scan-mode-btn active-boarding';
-        dBtn.className = 'scan-mode-btn btn-light';
+        dBtn.className = 'scan-mode-btn btn-light border';
         label.innerText = 'Morning Boarding (Entry)';
         label.className = 'text-success';
         if (handoverPanel) handoverPanel.style.display = 'none';
       } else {
         dBtn.className = 'scan-mode-btn active-dropoff';
-        bBtn.className = 'scan-mode-btn btn-light';
+        bBtn.className = 'scan-mode-btn btn-light border';
         label.innerText = 'Drop-Off Exit (Safe Arrival)';
         label.className = 'text-danger';
         if (handoverPanel) handoverPanel.style.display = 'block';
@@ -451,7 +489,6 @@
 
       const busId = document.getElementById('bus-terminal-select').value;
       const endpoint = currentMode === 'BOARD' ? '/api/bus/board' : '/api/bus/verify-exit';
-      let currentWrongBusRoll = null;
 
       try {
         const res = await fetch(endpoint, {
@@ -470,7 +507,6 @@
         // Check for Wrong Bus Warning
         const wrongBox = document.getElementById('wrong-bus-alert-box');
         if (data.alert === 'WRONG_BUS') {
-          currentWrongBusRoll = student.roll_number;
           window.lastWrongRoll = student.roll_number;
           wrongBox.style.display = 'block';
           document.getElementById('wrong-bus-message-text').innerText = data.message;
@@ -636,7 +672,6 @@
     }
 
     function simWrongBusScan(roll) {
-      // Temporarily switch select to Bus #2 (Cuttack) to trigger wrong bus
       document.getElementById('bus-terminal-select').value = '3';
       handleSuccessfulFaceMatch({
         student_id: 'STU-ROHAN',

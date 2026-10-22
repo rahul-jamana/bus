@@ -3,142 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Driver Mobile GPS Console — SchoolSafe</title>
+  <title>Driver Mobile GPS Cockpit — SchoolSafe</title>
 
   <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
   <style>
     :root {
-      --primary-blue: #0284c7;
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
       --navy: #0f172a;
-      --bg: #f0f9ff;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
-      --border: #bae6fd;
-      --green: #10b981;
+      --emerald: #059669;
+      --emerald-bg: #ecfdf5;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08);
     }
+
+    * { box-sizing: border-box; }
 
     body {
       background-color: var(--bg);
-      font-family: 'Inter', sans-serif;
-      color: #1e293b;
-      padding-bottom: 40px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--slate-800);
+      margin: 0;
+      padding-bottom: 50px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4, h5, .brand-font {
+    h1, h2, h3, h4, h5, h6, .brand-font {
       font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
     }
 
+    /* Driver Cockpit Header */
     .driver-header {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-      color: white;
-      border-radius: 0 0 24px 24px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
       padding: 24px 20px;
-      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
     }
 
-    .card-custom {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.06);
+    .card-surface {
+      background: var(--card-bg);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 16px;
+    }
+
+    .speed-display-box {
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .speed-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 4px;
     }
 
     .gps-pulse-active {
-      width: 14px;
-      height: 14px;
-      background-color: var(--green);
+      width: 12px;
+      height: 12px;
+      background-color: var(--emerald);
       border-radius: 50%;
       display: inline-block;
-      box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 0 rgba(5, 150, 105, 0.4);
       animation: pulse 1.6s infinite;
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
     }
 
     .btn-gps-start {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
       color: white;
       font-weight: 700;
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: var(--radius-md);
+      padding: 18px;
       border: none;
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
       font-size: 1.15rem;
       transition: all 0.2s;
     }
 
     .btn-gps-stop {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
       color: white;
       font-weight: 700;
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: var(--radius-md);
+      padding: 18px;
       border: none;
-      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.35);
       font-size: 1.15rem;
     }
 
-    .speed-gauge {
-      font-size: 2.8rem;
-      font-weight: 800;
-      color: #0284c7;
-      line-height: 1;
-    }
-
     .student-item {
-      border-left: 4px solid var(--border);
+      border: 1px solid var(--slate-200);
+      border-left: 4px solid var(--slate-300);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
       transition: all 0.2s;
+      background: #ffffff;
     }
 
     .student-item.boarded {
-      border-left-color: var(--green);
-      background-color: #f0fdf4;
+      border-left-color: var(--emerald);
+      background-color: var(--emerald-bg);
+      border-color: #a7f3d0;
     }
   </style>
 </head>
 <body>
 
   <!-- MOBILE HEADER -->
-  <div class="driver-header text-center mb-4">
+  <div class="driver-header mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <span class="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold">
-        <i class="fa-solid fa-satellite-dish me-1"></i> Mobile GPS Transmitter
+      <span class="badge bg-white bg-opacity-10 text-white border border-white border-opacity-25 rounded-pill px-3 py-1 fw-bold small">
+        <i class="fa-solid fa-satellite-dish me-1 text-info"></i> GPS Telemetry Transmitter
       </span>
-      <a href="/admin" class="btn btn-sm btn-light text-primary rounded-pill fw-bold">Admin</a>
+      <div class="d-flex gap-2">
+        <a href="/admin" class="btn btn-sm btn-light rounded-pill fw-bold px-3">Admin</a>
+      </div>
     </div>
-    <h3 class="fw-bold brand-font mb-1">Driver Console</h3>
-    <p class="small mb-0 opacity-75">Streams your phone's real-time GPS location directly to parents</p>
+    <h3 class="fw-bold brand-font mb-1 text-white">Driver Console</h3>
+    <p class="small mb-0 text-white-50">Streams phone GPS location directly to parents in real-time</p>
   </div>
 
   <div class="container px-3">
 
     <!-- BUS SELECTION CARD -->
-    <div class="card card-custom p-3 mb-3">
-      <label class="form-label small fw-bold text-secondary text-uppercase">Assigned School Bus</label>
+    <div class="card-surface p-3 mb-3">
+      <label class="form-label small fw-bold text-muted text-uppercase mb-1">Assigned Route & Vehicle</label>
       <div class="input-group mb-2">
-        <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-bus"></i></span>
-        <select id="bus-select" class="form-select fw-bold text-primary" onchange="onBusChanged()">
+        <span class="input-group-text bg-white border-end-0 text-primary"><i class="fa-solid fa-bus"></i></span>
+        <select id="bus-select" class="form-select border-start-0 ps-0 fw-bold text-dark" onchange="onBusChanged()">
           <option value="1" selected>Bus #4 — Khordha Route (Driver: Ramesh Kumar)</option>
           <option value="2">Bus #1 — Bhubaneswar Route (Driver: Suresh Mohanty)</option>
           <option value="3">Bus #2 — Cuttack Route (Driver: Bikash Rout)</option>
         </select>
       </div>
       <div class="d-flex justify-content-between align-items-center small text-muted">
-        <span>Driver Phone: <strong id="driver-phone-display">+91 9876500004</strong></span>
+        <span>Phone: <strong id="driver-phone-display">+91 9876500004</strong></span>
         <span>Route: <strong id="driver-route-display">Khordha Bypass</strong></span>
       </div>
     </div>
 
-    <!-- TRIP MANAGEMENT & SOS CONTROLS -->
+    <!-- TRIP MANAGEMENT DUAL CONTROLS -->
     <div class="row g-2 mb-3">
       <div class="col-6">
         <button id="btn-trip-start" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold shadow-sm" onclick="startTrip()">
@@ -152,9 +193,9 @@
       </div>
     </div>
 
-    <!-- GPS STATUS & SPEEDOMETER CARD -->
-    <div class="card card-custom p-4 text-center mb-3">
-      <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- SPEEDOMETER & TELEMETRY HUD -->
+    <div class="speed-display-box">
+      <div class="d-flex justify-content-between align-items-center mb-2 px-1">
         <div class="d-flex align-items-center">
           <span class="gps-pulse-active me-2" id="gps-pulse" style="display: none;"></span>
           <span class="fw-bold small" id="gps-status-text">GPS Idle (Ready to Start)</span>
@@ -164,12 +205,10 @@
         </span>
       </div>
 
-      <div class="my-2">
-        <div class="speed-gauge" id="speed-display">0</div>
-        <span class="text-muted fw-semibold small text-uppercase">Kilometers Per Hour (km/h)</span>
-      </div>
+      <div class="speed-number" id="speed-display">0</div>
+      <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.05em;">Kilometers Per Hour (km/h)</span>
 
-      <div class="row g-2 mt-3 pt-3 border-top">
+      <div class="row g-2 mt-3 pt-3 border-top border-slate-200">
         <div class="col-4 border-end">
           <span class="text-muted small d-block">Latitude</span>
           <strong class="font-monospace small text-dark" id="lat-display">20.2961</strong>
@@ -185,13 +224,13 @@
       </div>
     </div>
 
-    <!-- MAIN START / STOP GPS TOGGLE BUTTON -->
+    <!-- MASTER START / STOP GPS BROADCAST BUTTON -->
     <div class="mb-3">
       <button id="btn-toggle-gps" class="btn btn-gps-start w-100" onclick="toggleGpsTracking()">
         <i class="fa-solid fa-location-crosshairs me-2"></i>Start Live GPS Sharing
       </button>
       <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-        <span class="small text-muted"><i class="fa-solid fa-shield-heart text-primary me-1"></i>Keeps parents updated in real-time.</span>
+        <span class="small text-muted"><i class="fa-solid fa-shield-heart text-primary me-1"></i>Streams high-accuracy coordinates to parents.</span>
         <button type="button" id="btn-simulate-drive" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="toggleDriveSimulation()">
           <i class="fa-solid fa-route me-1"></i> Sim Drive
         </button>
@@ -199,20 +238,20 @@
     </div>
 
     <!-- EMERGENCY SOS PANIC BUTTON -->
-    <div class="mb-3">
-      <button class="btn btn-danger w-100 py-3 rounded-4 fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); font-size: 1.1rem;" onclick="triggerSosPanic()">
+    <div class="mb-4">
+      <button class="btn btn-danger w-100 py-3 rounded-4 fw-bold shadow d-flex justify-content-center align-items-center gap-2" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); font-size: 1.05rem;" onclick="triggerSosPanic()">
         <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
         <span>EMERGENCY SOS PANIC BUTTON</span>
       </button>
-      <div class="text-center small text-muted mt-1" style="font-size: 0.72rem;">Instantly alerts police, school admin, and dispatches SMS alerts to parents.</div>
+      <div class="text-center small text-muted mt-1" style="font-size: 0.72rem;">Instantly broadcasts alert to Police, Transport Admin, and all Parents.</div>
     </div>
 
     <!-- PASSENGERS ROSTER & BOARDING CHECKLIST -->
-    <div class="card card-custom p-3 mb-3">
+    <div class="card-surface p-3 mb-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h6 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-clipboard-user me-2"></i>Students on this Route</h6>
-          <span class="text-muted" style="font-size: 0.75rem;">Verified custody checklist</span>
+          <h6 class="fw-bold brand-font text-dark mb-0"><i class="fa-solid fa-clipboard-user text-primary me-2"></i>Route Passenger Checklist</h6>
+          <span class="text-muted" style="font-size: 0.75rem;">Verified student custody roster</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success" id="boarded-counter">0 / 0 Boarded</span>
       </div>
@@ -225,13 +264,13 @@
     <!-- MANDATORY SLEEPING CHILD INSPECTION MODAL -->
     <div id="inspection-modal" class="modal fade" tabindex="-1" style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content card-custom p-4 border-0">
+        <div class="modal-content card-surface p-4 border-0">
           <div class="text-center mb-3">
             <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-2" style="width: 60px; height: 60px;">
               <i class="fa-solid fa-person-walking-dashed-line-arrow-right fa-2x"></i>
             </div>
-            <h4 class="fw-bold brand-font text-danger mb-1">Mandatory Safety Walkthrough</h4>
-            <p class="text-muted small">End of Trip Child Inspection Checklist</p>
+            <h4 class="fw-bold brand-font text-danger mb-1">Mandatory Walkthrough Inspection</h4>
+            <p class="text-muted small">End of Trip Sleeping Child Safety Verification</p>
           </div>
 
           <div class="alert alert-warning small py-2 d-flex align-items-center mb-3">
@@ -279,10 +318,10 @@
       </div>
     </div>
 
-    <!-- QUICK LINKS TO OTHER PORTALS -->
+    <!-- QUICK PORTAL LINKS -->
     <div class="d-flex gap-2">
-      <a href="/bus-terminal" class="btn btn-outline-primary btn-sm flex-fill rounded-pill py-2">
-        <i class="fa-solid fa-camera me-1"></i> Open Door Scanner
+      <a href="/bus-terminal.html" class="btn btn-outline-primary btn-sm flex-fill rounded-pill py-2">
+        <i class="fa-solid fa-camera me-1"></i> Door Scanner
       </a>
       <a href="/parent" class="btn btn-outline-secondary btn-sm flex-fill rounded-pill py-2">
         <i class="fa-solid fa-heart me-1"></i> Parent View
@@ -339,7 +378,7 @@
         const isBoarded = s.today_boarded == 1;
         if (isBoarded) boardedCount++;
         return `
-          <div class="card p-2 student-item ${isBoarded ? 'boarded' : ''} rounded-3">
+          <div class="student-item ${isBoarded ? 'boarded' : ''}">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong class="d-block text-dark small">${s.name}</strong>

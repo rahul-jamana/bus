@@ -19,92 +19,135 @@
 
   <style>
     :root {
-      --primary-blue: #0284c7;
-      --primary-dark: #0369a1;
+      --primary-blue: #1d4ed8;
+      --primary-dark: #1e40af;
+      --primary-light: #eff6ff;
       --navy: #0f172a;
-      --bg-light: #f0f9ff;
+      --slate-800: #1e293b;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --bg-light: #f8fafc;
       --card-bg: #ffffff;
-      --border-blue: #bae6fd;
-      --accent-green: #10b981;
-      --accent-amber: #f59e0b;
+      --border-blue: #e2e8f0;
+      --accent-green: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08);
     }
+
+    * { box-sizing: border-box; }
 
     body {
       background-color: var(--bg-light);
-      font-family: 'Inter', sans-serif;
-      color: #1e293b;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--slate-800);
       margin: 0;
       padding: 0;
+      -webkit-font-smoothing: antialiased;
     }
 
     h1, h2, h3, h4, h5, h6, .brand-font {
       font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
     }
 
     .navbar-custom {
-      background: #ffffff;
-      border-bottom: 2px solid var(--border-blue);
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      box-shadow: var(--shadow-sm);
     }
 
     .nav-pill-custom {
-      border-radius: 10px;
-      padding: 8px 16px;
+      border-radius: 9999px;
+      padding: 8px 18px;
       font-weight: 600;
-      color: #0369a1;
+      font-size: 0.88rem;
+      color: var(--slate-600);
+      background: transparent;
       border: 1px solid transparent;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
     }
 
-    .nav-pill-custom:hover, .nav-pill-custom.active {
-      background-color: #e0f2fe;
-      color: var(--primary-dark);
-      border-color: var(--border-blue);
+    .nav-pill-custom:hover {
+      color: var(--primary-blue);
+      background-color: var(--primary-light);
+    }
+
+    .nav-pill-custom.active {
+      background-color: var(--primary-blue);
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
     .card-custom {
       background: #ffffff;
-      border: 1px solid var(--border-blue);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(2, 132, 199, 0.06);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .stat-card {
-      border-left: 5px solid var(--primary-blue);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      background: #ffffff;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-card.green { border-left-color: var(--accent-green); }
-    .stat-card.amber { border-left-color: var(--accent-amber); }
-    .stat-card.purple { border-left-color: #8b5cf6; }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-blue);
+    }
+
+    .stat-card.green::before { background: var(--accent-green); }
+    .stat-card.amber::before { background: var(--accent-amber); }
+    .stat-card.purple::before { background: #8b5cf6; }
 
     .btn-primary-blue {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
       color: #ffffff;
       font-weight: 600;
       border: none;
-      border-radius: 10px;
-      padding: 10px 20px;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      border-radius: var(--radius-md);
+      padding: 12px 24px;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.3);
       transition: all 0.2s;
     }
 
     .btn-primary-blue:hover {
-      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+      background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
       color: #ffffff;
-      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+      box-shadow: 0 6px 18px rgba(29, 78, 216, 0.4);
       transform: translateY(-1px);
     }
 
     .camera-container {
       position: relative;
       width: 100%;
-      height: 280px;
+      height: 290px;
       background: #0f172a;
-      border-radius: 14px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      border: 2px dashed #38bdf8;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 8px 25px rgba(15, 23, 42, 0.2);
     }
 
     #webcam-video, #canvas-overlay {
@@ -122,8 +165,8 @@
       left: 12px;
       background: rgba(15, 23, 42, 0.85);
       color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 20px;
+      padding: 6px 14px;
+      border-radius: 9999px;
       font-size: 0.8rem;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -137,7 +180,7 @@
 
     .table-custom tr {
       background-color: #ffffff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      box-shadow: var(--shadow-sm);
       border-radius: 10px;
     }
 
@@ -177,9 +220,9 @@
     }
 
     #admin-map {
-      height: 380px;
-      border-radius: 14px;
-      border: 1px solid var(--border-blue);
+      height: 400px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--slate-200);
     }
   </style>
 </head>
@@ -230,13 +273,13 @@
   <!-- MAIN ADMIN NAVIGATION -->
   <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
     <div class="container-fluid px-4">
-      <a class="navbar-brand d-flex align-items-center" href="/admin">
-        <div class="bg-primary text-white p-2 rounded-3 me-2 shadow-sm">
-          <i class="fa-solid fa-bus-simple fa-lg"></i>
+      <a class="navbar-brand d-flex align-items-center gap-3 text-decoration-none" href="/admin">
+        <div class="brand-mark" style="width: 40px; height: 40px; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);">
+          <i class="fa-solid fa-shield-halved fa-lg"></i>
         </div>
         <div>
-          <span class="fw-bold brand-font fs-5 text-primary d-block lh-1">SchoolSafe Transport</span>
-          <span class="text-muted small" style="font-size: 0.75rem;">AI Face Boarding & Live GPS Telemetry</span>
+          <span class="fw-bold brand-font fs-5 text-dark lh-1 d-block">SchoolSafe<span class="text-primary">.ai</span> Admin</span>
+          <span class="text-muted small" style="font-size: 0.75rem;">AI Face Boarding & Live Fleet Management</span>
         </div>
       </a>
 

@@ -44,8 +44,25 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Explicit Primary UI Portal Routes - Prioritized over static directory indexes
+app.get(['/admin', '/admin/'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get(['/parent', '/parent/'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'parent.html'));
+});
+
+app.get(['/driver', '/driver/'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'driver.html'));
+});
+
+app.get(['/bus-terminal', '/bus-terminal/', '/bus-terminal.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'bus-terminal.html'));
+});
+
 // Static Asset Directories
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 app.use('/uploads/gate_logs', express.static(path.join(__dirname, 'uploads', 'gate_logs')));
 app.use('/uploads/daily_csv_logs', express.static(path.join(__dirname, 'uploads', 'daily_csv_logs')));
 
@@ -74,12 +91,8 @@ app.use('/api/security', securityRoutes);
 app.use('/api/bus', busRoutes);
 app.use('/api/transport-fees', transportFeeRoutes);
 
-// Explicit UI Page Routes for Clean URLs
+// Explicit Sub-page Routes
 const uiRoutes = [
-  '/admin',
-  '/driver',
-  '/parent',
-  '/bus-terminal',
   '/student/bus-pass',
   '/student/bus-log',
   '/parent/ward-transport',
@@ -96,7 +109,7 @@ const uiRoutes = [
 ];
 
 uiRoutes.forEach(route => {
-  app.get(route, (req, res) => {
+  app.get([route, `${route}/`], (req, res) => {
     let filePath = path.join(__dirname, 'public', `${route}.html`);
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);

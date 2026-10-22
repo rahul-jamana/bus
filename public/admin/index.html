@@ -19,92 +19,135 @@
 
   <style>
     :root {
-      --primary-blue: #0284c7;
-      --primary-dark: #0369a1;
+      --primary-blue: #1d4ed8;
+      --primary-dark: #1e40af;
+      --primary-light: #eff6ff;
       --navy: #0f172a;
-      --bg-light: #f0f9ff;
+      --slate-800: #1e293b;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --bg-light: #f8fafc;
       --card-bg: #ffffff;
-      --border-blue: #bae6fd;
-      --accent-green: #10b981;
-      --accent-amber: #f59e0b;
+      --border-blue: #e2e8f0;
+      --accent-green: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08);
     }
+
+    * { box-sizing: border-box; }
 
     body {
       background-color: var(--bg-light);
-      font-family: 'Inter', sans-serif;
-      color: #1e293b;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--slate-800);
       margin: 0;
       padding: 0;
+      -webkit-font-smoothing: antialiased;
     }
 
     h1, h2, h3, h4, h5, h6, .brand-font {
       font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
     }
 
     .navbar-custom {
-      background: #ffffff;
-      border-bottom: 2px solid var(--border-blue);
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      box-shadow: var(--shadow-sm);
     }
 
     .nav-pill-custom {
-      border-radius: 10px;
-      padding: 8px 16px;
+      border-radius: 9999px;
+      padding: 8px 18px;
       font-weight: 600;
-      color: #0369a1;
+      font-size: 0.88rem;
+      color: var(--slate-600);
+      background: transparent;
       border: 1px solid transparent;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
     }
 
-    .nav-pill-custom:hover, .nav-pill-custom.active {
-      background-color: #e0f2fe;
-      color: var(--primary-dark);
-      border-color: var(--border-blue);
+    .nav-pill-custom:hover {
+      color: var(--primary-blue);
+      background-color: var(--primary-light);
+    }
+
+    .nav-pill-custom.active {
+      background-color: var(--primary-blue);
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
     .card-custom {
       background: #ffffff;
-      border: 1px solid var(--border-blue);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(2, 132, 199, 0.06);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .stat-card {
-      border-left: 5px solid var(--primary-blue);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      background: #ffffff;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-card.green { border-left-color: var(--accent-green); }
-    .stat-card.amber { border-left-color: var(--accent-amber); }
-    .stat-card.purple { border-left-color: #8b5cf6; }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-blue);
+    }
+
+    .stat-card.green::before { background: var(--accent-green); }
+    .stat-card.amber::before { background: var(--accent-amber); }
+    .stat-card.purple::before { background: #8b5cf6; }
 
     .btn-primary-blue {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
       color: #ffffff;
       font-weight: 600;
       border: none;
-      border-radius: 10px;
-      padding: 10px 20px;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      border-radius: var(--radius-md);
+      padding: 12px 24px;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.3);
       transition: all 0.2s;
     }
 
     .btn-primary-blue:hover {
-      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+      background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
       color: #ffffff;
-      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+      box-shadow: 0 6px 18px rgba(29, 78, 216, 0.4);
       transform: translateY(-1px);
     }
 
     .camera-container {
       position: relative;
       width: 100%;
-      height: 280px;
+      height: 290px;
       background: #0f172a;
-      border-radius: 14px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      border: 2px dashed #38bdf8;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 8px 25px rgba(15, 23, 42, 0.2);
     }
 
     #webcam-video, #canvas-overlay {
@@ -122,8 +165,8 @@
       left: 12px;
       background: rgba(15, 23, 42, 0.85);
       color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 20px;
+      padding: 6px 14px;
+      border-radius: 9999px;
       font-size: 0.8rem;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -137,7 +180,7 @@
 
     .table-custom tr {
       background-color: #ffffff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      box-shadow: var(--shadow-sm);
       border-radius: 10px;
     }
 
@@ -177,9 +220,9 @@
     }
 
     #admin-map {
-      height: 380px;
-      border-radius: 14px;
-      border: 1px solid var(--border-blue);
+      height: 400px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--slate-200);
     }
   </style>
 </head>
@@ -230,13 +273,13 @@
   <!-- MAIN ADMIN NAVIGATION -->
   <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
     <div class="container-fluid px-4">
-      <a class="navbar-brand d-flex align-items-center" href="/admin">
-        <div class="bg-primary text-white p-2 rounded-3 me-2 shadow-sm">
-          <i class="fa-solid fa-bus-simple fa-lg"></i>
+      <a class="navbar-brand d-flex align-items-center gap-3 text-decoration-none" href="/admin">
+        <div class="brand-mark" style="width: 40px; height: 40px; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);">
+          <i class="fa-solid fa-shield-halved fa-lg"></i>
         </div>
         <div>
-          <span class="fw-bold brand-font fs-5 text-primary d-block lh-1">SchoolSafe Transport</span>
-          <span class="text-muted small" style="font-size: 0.75rem;">AI Face Boarding & Live GPS Telemetry</span>
+          <span class="fw-bold brand-font fs-5 text-dark lh-1 d-block">SchoolSafe<span class="text-primary">.ai</span> Admin</span>
+          <span class="text-muted small" style="font-size: 0.75rem;">AI Face Boarding & Live Fleet Management</span>
         </div>
       </a>
 
@@ -244,6 +287,7 @@
         <button class="nav-pill-custom active" onclick="switchTab('enroll-tab')"><i class="fa-solid fa-user-plus me-1"></i> Register Student & Face</button>
         <button class="nav-pill-custom" onclick="switchTab('directory-tab')"><i class="fa-solid fa-address-book me-1"></i> Student Directory</button>
         <button class="nav-pill-custom" onclick="switchTab('fleet-tab')"><i class="fa-solid fa-map-location-dot me-1"></i> Live Fleet GPS</button>
+        <button class="nav-pill-custom" onclick="switchTab('journey-tab')"><i class="fa-solid fa-route me-1"></i> Journey & Simulation</button>
         <button class="nav-pill-custom" onclick="switchTab('logs-tab')"><i class="fa-solid fa-bell me-1"></i> In/Out Notifications</button>
       </div>
 
@@ -269,6 +313,25 @@
 
   <!-- BODY CONTENT -->
   <div class="container-fluid px-4 py-4">
+
+    <!-- ACTIVE SOS EMERGENCY BANNER (Shows when bus driver triggers panic) -->
+    <div id="sos-alert-banner" class="alert alert-danger shadow border-danger border-2 p-3 rounded-4 mb-4" style="display: none;">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center">
+          <div class="bg-danger text-white p-3 rounded-circle me-3 animate__animated animate__pulse animate__infinite">
+            <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+          </div>
+          <div>
+            <h5 class="fw-bold mb-0 text-danger" id="sos-banner-title">🚨 EMERGENCY SOS BROADCAST ACTIVE</h5>
+            <span class="small text-dark" id="sos-banner-meta">Driver triggered emergency alert. Police & emergency responders alerted.</span>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/driver" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill fw-bold">Open Console</a>
+          <button class="btn btn-danger btn-sm rounded-pill px-3 fw-bold" onclick="resolveCurrentSos()"><i class="fa-solid fa-check me-1"></i> Acknowledge & Resolve</button>
+        </div>
+      </div>
+    </div>
 
     <!-- TOP KPI STATS -->
     <div class="row g-3 mb-4">
@@ -401,6 +464,20 @@
                 <div class="col-md-6">
                   <label class="form-label small fw-bold text-secondary">Designated Bus Stop</label>
                   <input type="text" id="reg-stop-name" class="form-control" placeholder="Pitapalli Square">
+                </div>
+
+                <!-- DPDP Act Consent Compliance -->
+                <div class="col-12 mt-3">
+                  <div class="form-check p-3 bg-light rounded-3 border">
+                    <input class="form-check-input ms-0 me-2" type="checkbox" id="reg-consent" checked>
+                    <label class="form-check-label small fw-bold text-dark" for="reg-consent">
+                      <i class="fa-solid fa-shield-check text-success me-1"></i>
+                      Parent Consent Recorded for Biometric Verification (DPDP Act 2023 Compliance)
+                    </label>
+                    <div class="text-muted" style="font-size: 0.72rem; margin-left: 24px;">
+                      Facial templates are hashed locally into 128D mathematical vectors. Full student data protection is strictly maintained.
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>
@@ -573,6 +650,127 @@
       </div>
     </div>
 
+    <!-- TAB 5: JOURNEY CUSTODY & QUICK SIMULATION STATION -->
+    <div id="journey-tab" class="tab-content-panel" style="display: none;">
+      <div class="row g-4">
+        <!-- SIMULATION CONTROLS -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+              <div>
+                <h5 class="fw-bold brand-font text-primary mb-1"><i class="fa-solid fa-flask-vial me-2"></i>Interactive Safety Simulation Station</h5>
+                <span class="text-muted small">One-click live simulation of the full student custody chain for demonstration</span>
+              </div>
+              <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold">Live E2E Testing</span>
+            </div>
+
+            <div class="alert alert-info small py-2 d-flex align-items-center mb-3">
+              <i class="fa-solid fa-user-graduate me-2 text-primary fa-lg"></i>
+              <div>Active Test Subject: <strong>Rohan Verma (ROHAN-04)</strong> • Assigned: <strong>Bus #4 (Khordha)</strong> • Stop: <strong>Pitapalli Square</strong> • Guardian: <strong>Manoj Verma (+91 9876543210, OTP: 7421)</strong></div>
+            </div>
+
+            <div class="d-grid gap-2 mb-3">
+              <!-- Step 1: Normal Boarding -->
+              <button class="btn btn-outline-success text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simBoardRohan(false)">
+                <div>
+                  <strong class="d-block"><i class="fa-solid fa-person-walking-arrow-right text-success me-2"></i>1. Simulate Boarding (Bus #4 - Normal)</strong>
+                  <span class="text-muted small">Captures photo proof, verifies facial match, marks Rohan boarded & dispatches Parent SMS</span>
+                </div>
+                <span class="badge bg-success">Test Step 1</span>
+              </button>
+
+              <!-- Step 1-B: Wrong Bus Boarding -->
+              <button class="btn btn-outline-warning text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simBoardRohanWrongBus()">
+                <div>
+                  <strong class="d-block text-dark"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>1-B. Simulate Wrong Bus Boarding (Bus #2)</strong>
+                  <span class="text-muted small">Triggers Wrong Bus Alert, requests staff override, and notifies parent of bus change</span>
+                </div>
+                <span class="badge bg-warning text-dark">Wrong Bus Check</span>
+              </button>
+
+              <!-- Step 2: Bus Arrived at Stop -->
+              <button class="btn btn-outline-primary text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simArriveStop()">
+                <div>
+                  <strong class="d-block"><i class="fa-solid fa-location-dot text-primary me-2"></i>2. Simulate Bus Arrival at Stop (Pitapalli Square)</strong>
+                  <span class="text-muted small">Marks arrival at drop stop & sends "Bus Arrived at Stop" SMS to guardian</span>
+                </div>
+                <span class="badge bg-primary">Test Step 2</span>
+              </button>
+
+              <!-- Step 3: Verified Student Exit -->
+              <button class="btn btn-outline-info text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simStudentExit()">
+                <div>
+                  <strong class="d-block text-dark"><i class="fa-solid fa-door-open text-info me-2"></i>3. Simulate Verified Student Exit (Deboard)</strong>
+                  <span class="text-muted small">Confirms child stepped off bus safely. Child enters waiting zone for guardian handover</span>
+                </div>
+                <span class="badge bg-info text-dark">Test Step 3</span>
+              </button>
+
+              <!-- Step 4: Guardian Handover with OTP -->
+              <button class="btn btn-outline-dark text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simGuardianHandover()">
+                <div>
+                  <strong class="d-block"><i class="fa-solid fa-handshake-angle text-success me-2"></i>4. Simulate Guardian Handover (OTP Verification: 7421)</strong>
+                  <span class="text-muted small">Attendant enters Guardian Code 7421. Custody complete & Final Confirmation SMS sent</span>
+                </div>
+                <span class="badge bg-dark">Test Step 4</span>
+              </button>
+
+              <!-- SOS Panic Simulation -->
+              <button class="btn btn-outline-danger text-start p-3 rounded-3 d-flex justify-content-between align-items-center" onclick="simDriverSos()">
+                <div>
+                  <strong class="d-block"><i class="fa-solid fa-bell-slash text-danger me-2"></i>5. Simulate Driver SOS Emergency Broadcast</strong>
+                  <span class="text-muted small">Fires SOS alert, triggers red siren banner on Admin & broadcasts emergency SMS</span>
+                </div>
+                <span class="badge bg-danger">Emergency Panic</span>
+              </button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+              <span class="small text-muted">Test in live Parent Portal:</span>
+              <a href="/parent" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Parent Portal (Rohan)
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE CUSTODY STATUS FEED -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold brand-font text-primary mb-0"><i class="fa-solid fa-shield-halved me-2"></i>Live Custody Timeline Feed</h5>
+              <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="refreshJourneyFeed()"><i class="fa-solid fa-rotate me-1"></i> Refresh</button>
+            </div>
+
+            <!-- Current Rohan Journey Card -->
+            <div class="card p-3 border rounded-3 bg-light mb-3" id="rohan-custody-card">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong class="text-primary fs-6"><i class="fa-solid fa-user-check me-2"></i>Rohan Verma (ROHAN-04)</strong>
+                <span class="badge bg-secondary" id="rohan-current-stage-badge">Status: Loading...</span>
+              </div>
+              <div class="small text-muted mb-2" id="rohan-custody-desc">Loading custody milestones...</div>
+              <div class="progress" style="height: 10px;">
+                <div id="rohan-custody-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 20%;"></div>
+              </div>
+              <div class="d-flex justify-content-between text-muted small mt-1" style="font-size: 0.72rem;">
+                <span>Registered</span>
+                <span>Boarded</span>
+                <span>At Stop</span>
+                <span>Exited</span>
+                <span>Handover</span>
+              </div>
+            </div>
+
+            <!-- Live Logs Feed -->
+            <h6 class="small fw-bold text-secondary text-uppercase mb-2">Recent Journey Events</h6>
+            <div id="sim-event-feed" class="d-flex flex-column gap-2" style="max-height: 380px; overflow-y: auto;">
+              <div class="text-center py-4 text-muted small">Click any simulation button to trigger verified custody events.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Notification Toast Container -->
@@ -606,8 +804,11 @@
       await loadStudents();
       await loadBuses();
       await loadNotifications();
+      await refreshJourneyFeed();
       initFleetMap();
       setInterval(pollLiveFleet, 3000);
+      setInterval(pollSosAlerts, 2500);
+      setInterval(refreshJourneyFeed, 5000);
     });
 
     function checkAuth() {
@@ -1073,6 +1274,263 @@
       document.getElementById('toast-message').innerText = msg;
       const toast = new bootstrap.Toast(document.getElementById('toast-alert'));
       toast.show();
+    }
+
+    // ==============================================================================
+    // JOURNEY CUSTODY SIMULATION STATION & SOS HANDLERS
+    // ==============================================================================
+    let activeSosId = null;
+
+    async function pollSosAlerts() {
+      try {
+        const res = await fetch('/api/bus/sos/active');
+        const data = await res.json();
+        const banner = document.getElementById('sos-alert-banner');
+        if (data.success && data.alerts && data.alerts.length > 0) {
+          const alert = data.alerts[0];
+          activeSosId = alert.id;
+          banner.style.display = 'block';
+          document.getElementById('sos-banner-title').innerText = `🚨 EMERGENCY SOS BROADCAST: ${alert.bus_number || 'Bus'} (${alert.route_name || 'Fleet'})`;
+          document.getElementById('sos-banner-meta').innerText = `Driver: ${alert.driver_name || 'Driver'} (${alert.driver_phone || 'Call Police'}). Incident triggered at ${alert.created_at || 'Just Now'}.`;
+        } else {
+          activeSosId = null;
+          banner.style.display = 'none';
+        }
+      } catch (e) {}
+    }
+
+    async function resolveCurrentSos() {
+      if (!activeSosId) {
+        showToast('No active SOS alert to resolve.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/bus/sos/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: activeSosId })
+        });
+        const data = await res.json();
+        showToast(data.message || 'SOS Alert marked resolved.');
+        document.getElementById('sos-alert-banner').style.display = 'none';
+        activeSosId = null;
+      } catch (err) {
+        showToast('Error resolving SOS: ' + err.message);
+      }
+    }
+
+    async function refreshJourneyFeed() {
+      try {
+        const res = await fetch('/api/bus/parent-track/ROHAN-04');
+        const data = await res.json();
+        if (data.success) {
+          const journey = data.journey;
+          const badge = document.getElementById('rohan-current-stage-badge');
+          const desc = document.getElementById('rohan-custody-desc');
+          const prog = document.getElementById('rohan-custody-progress');
+
+          if (journey.is_handed_over) {
+            badge.className = 'badge bg-success';
+            badge.innerText = 'Custody Complete';
+            desc.innerHTML = `<strong>✔ Safe Handover Completed</strong> with guardian Manoj Verma at ${journey.handover_time || 'recent'}. OTP verified.`;
+            prog.style.width = '100%';
+            prog.className = 'progress-bar bg-success';
+          } else if (journey.is_exited) {
+            badge.className = 'badge bg-info text-dark';
+            badge.innerText = 'Exited at Stop';
+            desc.innerHTML = `<strong>🚪 Child Safely Exited Bus</strong> at Pitapalli Square at ${journey.exit_time || 'recent'}. Awaiting guardian pickup.`;
+            prog.style.width = '75%';
+            prog.className = 'progress-bar bg-info';
+          } else if (journey.is_arrived_stop) {
+            badge.className = 'badge bg-primary';
+            badge.innerText = 'Bus At Stop';
+            desc.innerHTML = `<strong>📍 Bus Arrived at Stop</strong> Pitapalli Square. Ready for supervised child exit.`;
+            prog.style.width = '55%';
+            prog.className = 'progress-bar bg-primary';
+          } else if (journey.is_boarded) {
+            badge.className = 'badge bg-warning text-dark';
+            badge.innerText = 'Boarded Bus';
+            desc.innerHTML = `<strong>🚌 Onboard Bus #4</strong>. Boarded at ${journey.boarding_time || 'recent'}. GPS live streaming.`;
+            prog.style.width = '35%';
+            prog.className = 'progress-bar bg-warning';
+          } else {
+            badge.className = 'badge bg-secondary';
+            badge.innerText = 'Awaiting Morning Boarding';
+            desc.innerText = 'Student registered. Not yet scanned at bus door.';
+            prog.style.width = '15%';
+            prog.className = 'progress-bar bg-secondary';
+          }
+        }
+
+        // Also fetch recent logs for feed
+        const logsRes = await fetch('/api/bus/logs?student_id=2');
+        const logsData = await logsRes.json();
+        if (logsData.success) {
+          const container = document.getElementById('sim-event-feed');
+          if (logsData.logs && logsData.logs.length > 0) {
+            container.innerHTML = logsData.logs.slice(0, 8).map(l => `
+              <div class="p-2 border rounded-3 bg-white shadow-sm small">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong class="text-primary">${l.log_type}</strong>
+                  <span class="text-muted" style="font-size: 0.72rem;">${l.log_time || 'Today'}</span>
+                </div>
+                <div class="text-dark">${l.student_name || 'Rohan Verma'} (${l.roll_number || 'ROHAN-04'}) • ${l.bus_number || 'Bus #4'}</div>
+                <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                  Alert: <span class="badge ${l.alert_type === 'NONE' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}">${l.alert_type}</span>
+                  • Face Confidence: ${l.face_confidence || 98.5}%
+                  ${l.staff_override == 1 ? '• <span class="badge bg-danger">Staff Overridden</span>' : ''}
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function simBoardRohan(override = false) {
+      try {
+        const res = await fetch('/api/bus/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: 'ROHAN-04',
+            bus_id: 1,
+            face_confidence: 99.2,
+            staff_override: override,
+            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Boarding simulated!');
+        await refreshJourneyFeed();
+        await loadNotifications();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    async function simBoardRohanWrongBus() {
+      try {
+        // Attempt boarding Bus #2 (Cuttack) instead of assigned Bus #4 (Khordha)
+        const res = await fetch('/api/bus/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: 'ROHAN-04',
+            bus_id: 3, // Bus #2
+            face_confidence: 98.8,
+            staff_override: false,
+            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+          })
+        });
+        const data = await res.json();
+        if (data.alert === 'WRONG_BUS') {
+          const doOverride = confirm(`${data.message}\n\nAuthorize Staff Override for Supervised Boarding?`);
+          if (doOverride) {
+            const overrideRes = await fetch('/api/bus/board', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                roll_number: 'ROHAN-04',
+                bus_id: 3,
+                face_confidence: 98.8,
+                staff_override: true,
+                photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+              })
+            });
+            const overrideData = await overrideRes.json();
+            showToast(overrideData.message || 'Staff override approved!');
+            await refreshJourneyFeed();
+            await loadNotifications();
+          }
+        } else {
+          showToast(data.message);
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    async function simArriveStop() {
+      try {
+        const res = await fetch('/api/bus/arrive-stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: 'ROHAN-04',
+            bus_id: 1,
+            stop_name: 'Pitapalli Square'
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Stop arrival triggered!');
+        await refreshJourneyFeed();
+        await loadNotifications();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    async function simStudentExit() {
+      try {
+        const res = await fetch('/api/bus/verify-exit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: 'ROHAN-04',
+            bus_id: 1,
+            stop_name: 'Pitapalli Square',
+            photo_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60'
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Student exit verified!');
+        await refreshJourneyFeed();
+        await loadNotifications();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    async function simGuardianHandover() {
+      try {
+        const res = await fetch('/api/bus/verify-handover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roll_number: 'ROHAN-04',
+            bus_id: 1,
+            stop_name: 'Pitapalli Square',
+            guardian_code: '7421'
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Guardian Handover Complete!');
+        await refreshJourneyFeed();
+        await loadNotifications();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
+    async function simDriverSos() {
+      try {
+        const res = await fetch('/api/bus/sos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bus_id: 1,
+            driver_name: 'Ramesh Kumar',
+            notes: 'Demo test of emergency driver SOS panic broadcast'
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || 'SOS broadcasted!');
+        await pollSosAlerts();
+        await loadNotifications();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
     }
   </script>
 </body>

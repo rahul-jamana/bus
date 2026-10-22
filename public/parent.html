@@ -8,7 +8,7 @@
   <!-- Google Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -17,244 +17,452 @@
 
   <style>
     :root {
-      --primary-blue: #0284c7;
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
       --navy: #0f172a;
-      --bg: #f0f9ff;
+      --slate-800: #1e293b;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
-      --border: #bae6fd;
-      --green: #10b981;
+      --emerald: #059669;
+      --emerald-bg: #ecfdf5;
+      --emerald-border: #a7f3d0;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 25px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.04);
     }
+
+    * { box-sizing: border-box; }
 
     body {
       background-color: var(--bg);
-      font-family: 'Inter', sans-serif;
-      color: #1e293b;
-      padding-bottom: 40px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--slate-800);
+      margin: 0;
+      padding: 0;
+      padding-bottom: 60px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4, h5, .brand-font {
+    h1, h2, h3, h4, h5, h6, .brand-font {
       font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
     }
 
+    /* Ambient Header */
     .parent-header {
-      background: #ffffff;
-      border-bottom: 2px solid var(--border);
-      padding: 16px 20px;
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
     }
 
-    .card-custom {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.06);
-    }
-
-    #parent-map {
-      height: 360px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      z-index: 1;
-    }
-
-    .status-pill-step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #64748b;
-    }
-
-    .status-pill-step.active {
-      color: var(--primary-blue);
-    }
-
-    .status-pill-step.completed {
-      color: var(--green);
-    }
-
-    .step-circle {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #e2e8f0;
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
     }
 
-    .status-pill-step.completed .step-circle {
-      background: #dcfce7;
-      color: var(--green);
+    .card-surface {
+      background: var(--card-bg);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      transition: all 0.2s ease;
     }
 
-    .status-pill-step.active .step-circle {
-      background: #e0f2fe;
-      color: var(--primary-blue);
-      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
+    /* Luxury Guardian OTP Pass Card */
+    .otp-pass-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .eta-banner {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    .otp-pass-card::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .otp-digit-block {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .otp-digit {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-md);
+      width: 52px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 4-Stage Custody Vertical Connected Stepper */
+    .custody-stepper {
+      position: relative;
+      padding-left: 28px;
+    }
+
+    .custody-stepper::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      bottom: 24px;
+      left: 11px;
+      width: 2px;
+      background: var(--slate-200);
+      z-index: 1;
+    }
+
+    .stepper-node {
+      position: relative;
+      margin-bottom: 20px;
+      z-index: 2;
+    }
+
+    .stepper-node:last-child {
+      margin-bottom: 0;
+    }
+
+    .stepper-dot {
+      position: absolute;
+      left: -28px;
+      top: 2px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid var(--slate-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: var(--slate-500);
+      transition: all 0.3s ease;
+    }
+
+    .stepper-node.completed .stepper-dot {
+      background: var(--emerald);
+      border-color: var(--emerald);
+      color: #ffffff;
+      box-shadow: 0 0 0 4px var(--emerald-bg);
+    }
+
+    .stepper-node.active .stepper-dot {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 0 4px var(--primary-light);
+      animation: pulseBlue 2s infinite;
+    }
+
+    @keyframes pulseBlue {
+      0% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(29, 78, 216, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); }
+    }
+
+    .stepper-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--navy);
+      margin-bottom: 2px;
+    }
+
+    .stepper-desc {
+      font-size: 0.82rem;
+      color: var(--slate-600);
+    }
+
+    /* Live Map Container */
+    #parent-map {
+      height: 380px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--slate-200);
+      z-index: 1;
+    }
+
+    /* Glass ETA Banner */
+    .eta-glass-banner {
+      background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
       color: white;
-      border-radius: 14px;
-      padding: 14px 18px;
+      border-radius: var(--radius-lg);
+      padding: 16px 22px;
+      box-shadow: 0 8px 20px rgba(29, 78, 216, 0.25);
+    }
+
+    /* Search & Selector Bar */
+    .search-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      padding: 18px 24px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 28px;
+    }
+
+    .quick-chip {
+      background: var(--slate-100);
+      color: var(--slate-800);
+      border: 1px solid var(--slate-200);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .quick-chip:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    .quick-chip.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    /* Verified Camera Photo Frame */
+    .photo-proof-frame {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .photo-proof-img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--slate-200);
+      box-shadow: var(--shadow-sm);
     }
   </style>
 </head>
 <body>
 
   <!-- TOP HEADER -->
-  <div class="parent-header d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-      <div class="bg-primary text-white p-2 rounded-3 me-2">
+  <header class="parent-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+      <a href="/" class="brand-mark text-decoration-none">
         <i class="fa-solid fa-heart fa-lg"></i>
-      </div>
+      </a>
       <div>
-        <h5 class="fw-bold brand-font text-primary mb-0">Parent Safety Portal</h5>
-        <span class="text-muted small" style="font-size: 0.75rem;">Live School Bus GPS & Photo Proof of Boarding</span>
+        <h5 class="fw-bold brand-font text-dark mb-0 lh-1">Parent Live Tracker</h5>
+        <span class="text-muted small" style="font-size: 0.78rem;">Real-time GPS bus streaming & verified child custody</span>
       </div>
     </div>
-    <div class="d-flex gap-2">
-      <a href="/admin" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Admin</a>
-      <a href="/driver" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold">Driver</a>
+    <div class="d-flex align-items-center gap-2">
+      <a href="/admin" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold px-3">
+        <i class="fa-solid fa-shield-halved me-1"></i> Admin
+      </a>
+      <a href="/driver" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3">
+        <i class="fa-solid fa-mobile-screen me-1"></i> Driver GPS
+      </a>
     </div>
-  </div>
+  </header>
 
-  <div class="container px-3">
+  <div class="container px-3 mt-4">
 
-    <!-- STUDENT SEARCH / SELECTION BAR -->
-    <div class="card card-custom p-3 mb-4">
-      <label class="form-label small fw-bold text-secondary text-uppercase">Track Your Child's Journey</label>
-      <div class="input-group">
-        <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <input type="text" id="parent-search-query" class="form-control" placeholder="Enter Child Roll No, ID or Parent Phone" value="ROHAN-04">
-        <button class="btn btn-primary fw-bold" onclick="trackStudent()">
-          <i class="fa-solid fa-location-arrow me-1"></i> Track Bus
-        </button>
-      </div>
-      <div class="d-flex gap-2 mt-2 align-items-center flex-wrap">
-        <span class="small text-muted">Quick Demo:</span>
-        <a href="javascript:void(0)" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-1" onclick="quickSelect('ROHAN-04')">Rohan Verma (ROHAN-04)</a>
-        <a href="javascript:void(0)" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-decoration-none px-2 py-1" onclick="quickSelect('BEC26081')">Munu Nial (BEC26081)</a>
-        <a href="javascript:void(0)" class="badge bg-light text-dark border text-decoration-none px-2 py-1" onclick="quickSelect('+91 9876543210')">+91 9876543210</a>
+    <!-- SEARCH & CHILD SELECTION BAR -->
+    <div class="search-card">
+      <div class="row align-items-center g-3">
+        <div class="col-lg-6">
+          <label class="form-label small fw-bold text-muted text-uppercase mb-1">Select Student / Track Child</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" id="parent-search-query" class="form-control border-start-0 ps-0" placeholder="Enter Child Roll No (ROHAN-04) or Mobile" value="ROHAN-04">
+            <button class="btn btn-primary fw-bold px-4" onclick="trackStudent()">
+              <i class="fa-solid fa-location-arrow me-1"></i> Track Bus
+            </button>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <label class="form-label small fw-bold text-muted text-uppercase mb-1">Quick Select Demo Students:</label>
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <a href="javascript:void(0)" class="quick-chip active" onclick="quickSelect('ROHAN-04')">
+              <i class="fa-solid fa-user-graduate me-1 text-primary"></i> Rohan Verma (ROHAN-04)
+            </a>
+            <a href="javascript:void(0)" class="quick-chip" onclick="quickSelect('BEC26081')">
+              <i class="fa-solid fa-user me-1"></i> Munu Nial (BEC26081)
+            </a>
+            <a href="javascript:void(0)" class="quick-chip" onclick="quickSelect('+91 9876543210')">
+              <i class="fa-solid fa-phone me-1"></i> +91 9876543210
+            </a>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- MAIN TRACKING ROW -->
+    <!-- MAIN TRACKING GRID -->
     <div class="row g-4">
 
-      <!-- LEFT: TODAY'S CHILD SAFETY, OTP & PHOTO PROOF CARD -->
+      <!-- LEFT COLUMN: CHILD CUSTODY & GUARDIAN OTP PASS -->
       <div class="col-lg-5">
 
-        <!-- DYNAMIC GUARDIAN PICKUP CODE (OTP) CARD -->
-        <div class="card p-3 border-2 border-primary rounded-4 bg-white shadow-sm mb-3 text-center">
-          <span class="text-secondary small fw-bold text-uppercase mb-1 d-block">
-            <i class="fa-solid fa-key text-primary me-1"></i> Today's Guardian Pickup Code (OTP)
-          </span>
-          <div class="d-flex justify-content-center align-items-center gap-2 my-1">
-            <span class="fs-1 fw-bold text-primary font-monospace tracking-widest px-4 py-1 bg-light rounded-3 border border-primary-subtle" id="guardian-otp-code">7421</span>
+        <!-- 1. LUXURY GUARDIAN OTP PASS CARD -->
+        <div class="otp-pass-card mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1 rounded-pill">
+              <i class="fa-solid fa-shield-keyhole me-1"></i> Today's Pickup Pass
+            </span>
+            <span class="small text-white-50"><i class="fa-solid fa-circle-check text-success me-1"></i>Valid For Today</span>
           </div>
-          <span class="text-muted small" style="font-size: 0.75rem;">
-            Present this 4-digit code to the bus attendant when picking up your child from the stop.
-          </span>
+
+          <div class="text-center my-3">
+            <span class="small text-uppercase text-white-50 fw-semibold tracking-wide d-block mb-1">Guardian Pickup Code (OTP)</span>
+            <div class="otp-digit-block">
+              <div class="otp-digit" id="otp-d1">7</div>
+              <div class="otp-digit" id="otp-d2">4</div>
+              <div class="otp-digit" id="otp-d3">2</div>
+              <div class="otp-digit" id="otp-d4">1</div>
+            </div>
+            <span class="d-none" id="guardian-otp-code">7421</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25 small text-white-50">
+            <span><i class="fa-solid fa-hand-holding-hand text-info me-1"></i> Show to bus attendant upon pickup</span>
+            <button class="btn btn-sm btn-outline-light rounded-pill py-0 px-2 fw-semibold" onclick="copyOtp()" style="font-size: 0.75rem;">
+              <i class="fa-solid fa-copy me-1"></i> Copy
+            </button>
+          </div>
         </div>
 
-        <div class="card card-custom p-4 text-center mb-3">
-          <div class="position-relative d-inline-block mx-auto mb-3">
-            <img id="child-photo" src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80" class="rounded-circle border border-primary border-3 shadow" style="width: 100px; height: 100px; object-fit: cover;">
-            <span class="position-absolute bottom-0 end-0 bg-success text-white p-1 rounded-circle border border-white" style="width: 24px; height: 24px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center;">
-              <i class="fa-solid fa-check"></i>
-            </span>
+        <!-- 2. CHILD DETAILS & DOOR PHOTO PROOF -->
+        <div class="card-surface mb-4">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="position-relative">
+              <img id="child-photo" src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80" class="rounded-circle border border-primary border-3 shadow-sm" style="width: 72px; height: 72px; object-fit: cover;">
+              <span class="position-absolute bottom-0 end-0 bg-success text-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 22px; height: 22px; font-size: 0.7rem; border: 2px solid white;">
+                <i class="fa-solid fa-check"></i>
+              </span>
+            </div>
+            <div>
+              <h4 class="fw-bold brand-font text-dark mb-1" id="child-name">Rohan Verma</h4>
+              <span class="text-muted small d-block" id="child-meta">Roll: ROHAN-04 • Class V - Section A</span>
+            </div>
           </div>
 
-          <h4 class="fw-bold brand-font text-primary mb-1" id="child-name">Rohan Verma</h4>
-          <span class="text-muted small d-block mb-3" id="child-meta">Roll: ROHAN-04 • Class V - Section A</span>
-
-          <!-- LIVE BOARDING PHOTO CAPTURED BY BUS DOOR CAMERA -->
-          <div class="p-3 bg-light rounded-3 border mb-3 text-start">
+          <!-- Live Door Camera Snapshot Proof -->
+          <div class="photo-proof-frame">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="fw-bold small text-primary"><i class="fa-solid fa-camera me-1"></i>Door Verification Snapshot</span>
+              <span class="fw-bold small text-primary"><i class="fa-solid fa-camera me-1"></i>Door Camera Verification</span>
               <span class="badge bg-success" id="badge-boarded-status">Boarded 07:45 AM</span>
             </div>
-            <div class="text-center my-2">
-              <img id="boarding-snapshot-proof" src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60" class="img-fluid rounded-3 border shadow-sm" style="max-height: 160px; object-fit: cover; width: 100%;">
+            <img id="boarding-snapshot-proof" src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=60" class="photo-proof-img">
+            <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+              <span><i class="fa-solid fa-location-dot text-danger me-1"></i>Drop Stop: <strong id="boarding-stop-label">Pitapalli Square</strong></span>
+              <span class="badge bg-light text-dark border">Face Match 99.2%</span>
             </div>
-            <span class="text-muted small d-block" style="font-size: 0.75rem;">
-              <i class="fa-solid fa-location-dot text-danger me-1"></i>Drop Stop: <strong id="boarding-stop-label">Pitapalli Square</strong>
-            </span>
           </div>
 
-          <!-- 4-STAGE CUSTODY PROGRESS TIMELINE -->
-          <div class="card p-3 border-0 bg-light rounded-3 text-start">
-            <span class="fw-bold small text-secondary text-uppercase mb-2 d-block">Custody Journey Progress</span>
-            <div class="d-flex flex-column gap-3">
-              <!-- Stage 1 -->
-              <div class="status-pill-step completed" id="step-1">
-                <div class="step-circle"><i class="fa-solid fa-check"></i></div>
-                <div>
-                  <div class="fw-bold">1. Assigned Bus Route</div>
-                  <span class="text-muted" style="font-size: 0.75rem;" id="step-1-desc">Bus #4 (Khordha Route)</span>
-                </div>
+          <!-- 4-Stage Custody Progress Stepper -->
+          <div class="pt-2">
+            <span class="small fw-bold text-muted text-uppercase mb-3 d-block">Verified Custody Chain</span>
+            <div class="custody-stepper">
+              <!-- Step 1 -->
+              <div class="stepper-node completed" id="step-1">
+                <div class="stepper-dot"><i class="fa-solid fa-check"></i></div>
+                <div class="stepper-title">1. Assigned Route</div>
+                <div class="stepper-desc" id="step-1-desc">Bus #4 (Khordha Route)</div>
               </div>
 
-              <!-- Stage 2 -->
-              <div class="status-pill-step active" id="step-2">
-                <div class="step-circle"><i class="fa-solid fa-camera"></i></div>
-                <div>
-                  <div class="fw-bold" id="step-2-title">2. Boarded Bus (Door Camera Verified)</div>
-                  <span class="text-muted" style="font-size: 0.75rem;" id="step-2-desc">07:45 AM • Photo proof recorded</span>
-                </div>
+              <!-- Step 2 -->
+              <div class="stepper-node active" id="step-2">
+                <div class="stepper-dot"><i class="fa-solid fa-camera"></i></div>
+                <div class="stepper-title" id="step-2-title">2. Boarded Bus (Door Camera Verified)</div>
+                <div class="stepper-desc" id="step-2-desc">07:45 AM • Photo proof recorded</div>
               </div>
 
-              <!-- Stage 3 -->
-              <div class="status-pill-step" id="step-3">
-                <div class="step-circle"><i class="fa-solid fa-location-dot"></i></div>
-                <div>
-                  <div class="fw-bold" id="step-3-title">3. Bus at Stop</div>
-                  <span class="text-muted" style="font-size: 0.75rem;" id="step-3-desc">Pitapalli Square</span>
-                </div>
+              <!-- Step 3 -->
+              <div class="stepper-node" id="step-3">
+                <div class="stepper-dot"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="stepper-title" id="step-3-title">3. Bus at Stop</div>
+                <div class="stepper-desc" id="step-3-desc">Pitapalli Square</div>
               </div>
 
-              <!-- Stage 4 -->
-              <div class="status-pill-step" id="step-4">
-                <div class="step-circle"><i class="fa-solid fa-handshake-angle"></i></div>
-                <div>
-                  <div class="fw-bold" id="step-4-title">4. Guardian Handover Complete</div>
-                  <span class="text-muted" style="font-size: 0.75rem;" id="step-4-desc">OTP Handover Verification</span>
-                </div>
+              <!-- Step 4 -->
+              <div class="stepper-node" id="step-4">
+                <div class="stepper-dot"><i class="fa-solid fa-handshake-angle"></i></div>
+                <div class="stepper-title" id="step-4-title">4. Guardian Handover Complete</div>
+                <div class="stepper-desc" id="step-4-desc">OTP Handover Verification</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- DRIVER CONTACT CARD -->
-        <div class="card card-custom p-3">
+        <!-- 3. DRIVER DIRECT CONTACT CARD -->
+        <div class="card-surface p-3">
           <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <div class="bg-primary-subtle text-primary p-3 rounded-circle me-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="bg-primary-subtle text-primary p-3 rounded-circle">
                 <i class="fa-solid fa-user-tie fa-lg"></i>
               </div>
               <div>
                 <strong class="d-block text-dark" id="driver-name-card">Ramesh Kumar</strong>
-                <span class="text-muted small">Driver • Bus #4 (Khordha)</span>
+                <span class="text-muted small">Driver • Bus #4 (Khordha Route)</span>
               </div>
             </div>
-            <a href="tel:+919876500004" id="driver-phone-link" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+            <a href="tel:+919876500004" id="driver-phone-link" class="btn btn-primary rounded-pill px-3 fw-bold btn-sm">
               <i class="fa-solid fa-phone me-1"></i> Call Driver
             </a>
           </div>
         </div>
       </div>
 
-      <!-- RIGHT: LIVE INTERACTIVE BUS MAP & NOTIFICATIONS FEED -->
+      <!-- RIGHT COLUMN: LIVE INTERACTIVE MAP & ETA HUD -->
       <div class="col-lg-7">
-        <!-- Live Map -->
-        <div class="card card-custom p-3 mb-3">
-          <!-- STALE GPS GUARD WARNING BANNER -->
-          <div id="stale-gps-warning" class="alert alert-warning py-2 small mb-3 d-flex align-items-center border-warning" style="display: none;">
+        <div class="card-surface mb-4">
+          <!-- Stale GPS Warning Banner -->
+          <div id="stale-gps-warning" class="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center border-warning rounded-3" style="display: none;">
             <i class="fa-solid fa-triangle-exclamation text-warning me-2 fa-lg"></i>
             <div>
               <strong>GPS Temporarily Unavailable:</strong>
@@ -262,17 +470,20 @@
             </div>
           </div>
 
-          <!-- Dynamic ETA Banner -->
-          <div class="eta-banner d-flex justify-content-between align-items-center mb-3">
+          <!-- Dynamic Glass ETA Banner -->
+          <div class="eta-glass-banner d-flex justify-content-between align-items-center mb-3">
             <div>
-              <span class="small opacity-75 d-block text-uppercase fw-semibold">Estimated Arrival to Drop Stop</span>
+              <span class="small opacity-75 d-block text-uppercase fw-semibold" style="letter-spacing: 0.05em; font-size: 0.72rem;">Estimated Arrival To Stop</span>
               <h4 class="fw-bold brand-font mb-0" id="live-eta-countdown">~5 mins away (Pitapalli Square)</h4>
             </div>
-            <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold">
-              <i class="fa-solid fa-satellite-dish me-1"></i> Live GPS
-            </span>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold shadow-sm">
+                <i class="fa-solid fa-satellite-dish me-1"></i> Live GPS
+              </span>
+            </div>
           </div>
 
+          <!-- Map Viewport -->
           <div id="parent-map"></div>
 
           <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top small text-muted">
@@ -281,11 +492,14 @@
           </div>
         </div>
 
-        <!-- SMS / APP NOTIFICATION AUDIT FEED -->
-        <div class="card card-custom p-4">
-          <h6 class="fw-bold brand-font text-primary mb-3">
-            <i class="fa-solid fa-comment-sms me-2"></i>Official SMS Dispatches Received
-          </h6>
+        <!-- OFFICIAL SMS DISPATCH NOTIFICATIONS FEED -->
+        <div class="card-surface">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold brand-font text-dark mb-0">
+              <i class="fa-solid fa-comment-sms text-primary me-2"></i>Official SMS & App Notifications
+            </h6>
+            <span class="badge bg-light text-muted border">Audit Trail</span>
+          </div>
 
           <div id="parent-sms-feed" class="d-flex flex-column gap-2">
             <!-- Dynamically populated -->
@@ -319,7 +533,15 @@
 
     function quickSelect(q) {
       document.getElementById('parent-search-query').value = q;
+      document.querySelectorAll('.quick-chip').forEach(el => el.classList.remove('active'));
+      event.target.classList.add('active');
       trackStudent();
+    }
+
+    function copyOtp() {
+      const code = document.getElementById('guardian-otp-code').innerText || '7421';
+      navigator.clipboard.writeText(code);
+      alert('Copied Guardian OTP: ' + code);
     }
 
     async function trackStudent() {
@@ -356,9 +578,14 @@
       }
 
       // 2. Guardian OTP Code
-      const otpEl = document.getElementById('guardian-otp-code');
-      if (otpEl) {
-        otpEl.innerText = student.guardian_code || '7421';
+      const rawCode = String(student.guardian_code || '7421');
+      document.getElementById('guardian-otp-code').innerText = rawCode;
+      const digits = rawCode.split('');
+      if (digits.length >= 4) {
+        document.getElementById('otp-d1').innerText = digits[0];
+        document.getElementById('otp-d2').innerText = digits[1];
+        document.getElementById('otp-d3').innerText = digits[2];
+        document.getElementById('otp-d4').innerText = digits[3];
       }
 
       // 3. Drop Stop Label
@@ -413,7 +640,7 @@
       // Step 1: Assigned Route
       const step1 = document.getElementById('step-1');
       if (step1) {
-        step1.className = 'status-pill-step completed';
+        step1.className = 'stepper-node completed';
         document.getElementById('step-1-desc').innerText = `${bus ? bus.bus_number : 'Bus #4'} (${bus ? bus.route_name : 'Khordha'} Route)`;
       }
 
@@ -421,10 +648,10 @@
       const step2 = document.getElementById('step-2');
       if (step2) {
         if (isBoarded) {
-          step2.className = 'status-pill-step completed';
+          step2.className = 'stepper-node completed';
           document.getElementById('step-2-desc').innerText = `${boardTime} • Verified photo snapshot recorded`;
         } else {
-          step2.className = 'status-pill-step active';
+          step2.className = 'stepper-node active';
           document.getElementById('step-2-desc').innerText = 'Awaiting bus door camera scan';
         }
       }
@@ -434,13 +661,13 @@
       const step3 = document.getElementById('step-3');
       if (step3) {
         if (isAtStop) {
-          step3.className = 'status-pill-step completed';
+          step3.className = 'stepper-node completed';
           document.getElementById('step-3-desc').innerText = `Bus arrived at ${dropStopName}`;
         } else if (isBoarded) {
-          step3.className = 'status-pill-step active';
+          step3.className = 'stepper-node active';
           document.getElementById('step-3-desc').innerText = `En route to ${dropStopName}`;
         } else {
-          step3.className = 'status-pill-step';
+          step3.className = 'stepper-node';
           document.getElementById('step-3-desc').innerText = dropStopName;
         }
       }
@@ -451,13 +678,13 @@
       const step4 = document.getElementById('step-4');
       if (step4) {
         if (isHandedOver) {
-          step4.className = 'status-pill-step completed';
-          document.getElementById('step-4-desc').innerText = `Verified handover to Manoj Verma (OTP verified at ${journey.handover_time || 'recent'})`;
+          step4.className = 'stepper-node completed';
+          document.getElementById('step-4-desc').innerText = `Verified handover with Manoj Verma (OTP verified at ${journey.handover_time || 'recent'})`;
         } else if (isExited) {
-          step4.className = 'status-pill-step active';
+          step4.className = 'stepper-node active';
           document.getElementById('step-4-desc').innerText = 'Child safely stepped off bus • Awaiting OTP handover';
         } else {
-          step4.className = 'status-pill-step';
+          step4.className = 'stepper-node';
           document.getElementById('step-4-desc').innerText = 'OTP Handover Verification';
         }
       }
@@ -491,10 +718,10 @@
       }
 
       feed.innerHTML = notifications.map(n => `
-        <div class="p-3 bg-light rounded-3 border-start border-primary border-4 small">
+        <div class="p-3 bg-white rounded-3 border small shadow-sm">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <strong class="text-primary"><i class="fa-solid fa-bell me-1"></i>${n.subject || 'School Bus Alert'}</strong>
-            <span class="text-muted" style="font-size: 0.75rem;">${n.time || ''}</span>
+            <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">${n.time || ''}</span>
           </div>
           <p class="mb-0 text-secondary">${n.message}</p>
         </div>
@@ -510,10 +737,10 @@
         busMarker.setLatLng([lat, lng]);
       } else {
         const icon = L.divIcon({
-          html: `<div style="background: #0284c7; color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); border: 3px solid white;"><i class="fa-solid fa-bus"></i></div>`,
+          html: `<div style="background: #1d4ed8; color: white; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(29, 78, 216, 0.45); border: 3px solid white;"><i class="fa-solid fa-bus"></i></div>`,
           className: '',
-          iconSize: [38, 38],
-          iconAnchor: [19, 19]
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
         });
         busMarker = L.marker([lat, lng], { icon }).addTo(pMap);
         busMarker.bindPopup(`<b>${bus.bus_number}</b><br>Speed: ${bus.speed || 0} km/h`).openPopup();
@@ -535,5 +762,6 @@
       } catch (e) {}
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
