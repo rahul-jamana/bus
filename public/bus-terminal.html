@@ -311,6 +311,54 @@
       transform: translateY(-1px);
       box-shadow: var(--shadow-sm);
     }
+
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 768px) {
+      .terminal-nav {
+        padding: 10px 14px;
+      }
+      .nav-selectors-container {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .bus-nav-selector, .trip-nav-selector {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 135px;
+        width: auto !important;
+      }
+      .workflow-guide-banner {
+        display: none !important;
+      }
+      .direction-toggle-container {
+        width: 100%;
+        display: flex;
+        justify-content: stretch;
+      }
+      .direction-btn {
+        flex: 1;
+        text-align: center;
+        padding: 10px 6px;
+        font-size: 0.80rem;
+      }
+      .scanner-viewport {
+        height: 330px;
+      }
+      .quick-test-chip {
+        flex: 1 1 100%;
+        text-align: left;
+        padding: 9px 14px;
+        font-size: 0.82rem;
+      }
+      .method-tab-card {
+        padding: 10px 14px;
+      }
+      .container-fluid {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -331,9 +379,9 @@
     </div>
 
     <!-- Bus, Route, Trip, Network & Attendant Status Badges -->
-    <div class="d-flex align-items-center gap-2 flex-wrap">
+    <div class="d-flex align-items-center gap-2 flex-wrap nav-selectors-container">
       <!-- Bus Selector -->
-      <div class="input-group input-group-sm" style="width: 185px;">
+      <div class="input-group input-group-sm bus-nav-selector">
         <span class="input-group-text bg-white border-primary text-primary"><i class="fa-solid fa-bus"></i></span>
         <select id="bus-terminal-select" class="form-select form-select-sm fw-bold border-primary" onchange="handleBusSelectionChange()">
           <option value="1">Bus #4 — Khordha</option>
@@ -343,7 +391,7 @@
       </div>
 
       <!-- Active Trip Selector -->
-      <select id="trip-selector" class="form-select form-select-sm fw-bold border-secondary rounded-pill px-3 py-1" style="width: 190px;">
+      <select id="trip-selector" class="form-select form-select-sm fw-bold border-secondary rounded-pill px-3 py-1 trip-nav-selector">
         <option value="TRIP-MORN">Trip 101: Morning Pickup</option>
         <option value="TRIP-EVE">Trip 102: Return Drop-off</option>
       </select>
@@ -473,16 +521,16 @@
             </div>
           </div>
 
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex gap-2">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+            <div class="d-flex flex-wrap gap-2">
               <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="startScannerCamera()">
                 <i class="fa-solid fa-rotate me-1"></i> Restart Camera
               </button>
               <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onclick="selectVerificationTab('CARD')">
-                <i class="fa-solid fa-id-card me-1"></i> Camera Broken? Switch to ID Card &rarr;
+                <i class="fa-solid fa-id-card me-1"></i> Switch to ID Card &rarr;
               </button>
             </div>
-            <span class="small text-muted" id="ai-face-count">Loading Face Directory...</span>
+            <span class="small text-muted py-1" id="ai-face-count">Loading Face Directory...</span>
           </div>
 
           <!-- Quick Demo Face Scan Simulator (For Instant Testing) -->
