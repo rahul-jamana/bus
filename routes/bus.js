@@ -8,6 +8,16 @@ const {
   purgeOldLogs, 
   getRetentionStats 
 } = require('../utils/busReports');
+const {
+  getHaversineDistanceMeters,
+  reconcileTripAttendance,
+  resolveSafetyIncident,
+  processGeofenceAndDeviations,
+  predictEtaAndDelay,
+  processTripClearanceChecklist,
+  recordManifestBoarding,
+  recordManifestExit
+} = require('../utils/safeRideReconciliation');
 
 // POST /api/bus/board - Verified Boarding with Wrong Bus Detection & Audited Staff Override
 router.post('/board', async (req, res) => {
@@ -146,10 +156,25 @@ router.post('/board', async (req, res) => {
 
     // Success Boarding (Correct Bus)
     const isFace = manual_entry ? 0 : 1;
+    const vMethod = req.body.verification_method || (manual_entry ? 'BARCODE_MANUAL' : 'FACE');
     await dbRun(
-      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage, verification_method, verification_status, attendant_id, device_id) VALUES (?, ?, ?, ?, 'BOARD', ?, ?, ?, ?, 'NONE', ?, 1, ?, 'BOARD', 'FACE', 'VERIFIED', 'ATT-01', 'TERM-BUS-04')`,
-      [sId, sRoll, bus_id, route_id, isFace, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url, staff_override ? 1 : 0]
+      `INSERT INTO bus_boarding_logs (student_id, roll_number, bus_id, route_id, log_type, face_matched, face_confidence, gps_lat, gps_lng, alert_type, photo_url, parent_notified, staff_override, stage, verification_method, verification_status, attendant_id, device_id) VALUES (?, ?, ?, ?, 'BOARD', ?, ?, ?, ?, 'NONE', ?, 1, ?, 'BOARD', ?, 'VERIFIED', 'ATT-01', 'TERM-BUS-04')`,
+      [sId, sRoll, bus_id, route_id, isFace, face_confidence, lat || bus?.current_lat || 20.2961, lng || bus?.current_lng || 85.8245, photo_url, staff_override ? 1 : 0, vMethod]
     );
+
+    // Sync to SafeRide manifest
+    try {
+      await recordManifestBoarding({
+        busId: bus_id,
+        tripId: req.body.trip_id,
+        studentId: sId,
+        rollNumber: sRoll,
+        studentName: sName,
+        method: vMethod
+      });
+    } catch (mErr) {
+      console.warn('Manifest boarding record notice:', mErr.message);
+    }
 
     const smsRes = await dispatchBusSMSNotification('BOARD', {
       studentName: sName,
@@ -358,20 +383,22 @@ router.post('/verify-exit', async (req, res) => {
     const bus = await dbGet('SELECT * FROM buses WHERE id = ?', [bus_id]);
     const busNum = bus ? bus.bus_number : `Bus #${bus_id}`;
 
-    // Duplicate Exit Prevention
-    const existingExit = await dbGet(
-      `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = 'STUDENT_EXIT' AND date(log_time) = date('now')`,
-      [student.id, bus_id]
-    );
-    if (existingExit) {
-      return res.json({
-        success: false,
-        allowed: false,
-        alert: 'DUPLICATE_ATTENDANCE',
-        duplicate: true,
-        message: `⚠️ DUPLICATE EXIT: ${student.name} (${student.roll_number}) already recorded EXIT from ${busNum} today at ${existingExit.log_time}.`,
-        student: { id: student.id, name: student.name, roll: student.roll_number }
-      });
+    // Duplicate Exit Prevention (unless reporting unmonitored door exit discrepancy)
+    if (!req.body.unmonitored_door && !req.body.is_unmonitored) {
+      const existingExit = await dbGet(
+        `SELECT * FROM bus_boarding_logs WHERE student_id = ? AND bus_id = ? AND log_type = 'STUDENT_EXIT' AND date(log_time) = date('now')`,
+        [student.id, bus_id]
+      );
+      if (existingExit) {
+        return res.json({
+          success: false,
+          allowed: false,
+          alert: 'DUPLICATE_ATTENDANCE',
+          duplicate: true,
+          message: `⚠️ DUPLICATE EXIT: ${student.name} (${student.roll_number}) already recorded EXIT from ${busNum} today at ${existingExit.log_time}.`,
+          student: { id: student.id, name: student.name, roll: student.roll_number }
+        });
+      }
     }
 
     await dbRun(
@@ -379,6 +406,40 @@ router.post('/verify-exit', async (req, res) => {
        VALUES (?, ?, ?, 'STUDENT_EXIT', ?, ?, 1, 'EXIT', ?, 'VERIFIED', ?, ?)`,
       [student.id, student.roll_number, bus_id, verification_method === 'FACE' ? 1 : 0, photo_url, verification_method, attendant_id, device_id]
     );
+
+    // Sync to SafeRide manifest
+    try {
+      await recordManifestExit({
+        busId: bus_id,
+        tripId: req.body.trip_id,
+        studentId: student.id,
+        rollNumber: student.roll_number,
+        studentName: student.name,
+        method: verification_method
+      });
+    } catch (mErr) {
+      console.warn('Manifest exit record notice:', mErr.message);
+    }
+
+    // Flag unmonitored door or exit discrepancy
+    if (req.body.unmonitored_door || req.body.is_unmonitored) {
+      const incId = `INC-UNMON-${Date.now().toString().slice(-4)}`;
+      const note = `DISCREPANCY DETECTED: Student ${student.name} exited through an unmonitored door or outside monitored camera area. Attendant verification required.`;
+      await dbRun(
+        `INSERT INTO safety_incidents (incident_id, trip_id, bus_id, student_id, roll_number, student_name, incident_type, severity, status, details, description) 
+         VALUES (?, ?, ?, ?, ?, ?, 'UNMONITORED_EXIT', 'HIGH', 'OPEN', ?, ?)`,
+        [
+          incId,
+          req.body.trip_id || 102,
+          bus_id,
+          student.id,
+          student.roll_number,
+          student.name,
+          note,
+          note
+        ]
+      );
+    }
 
     const smsRes = await dispatchBusSMSNotification('STUDENT_EXIT', {
       studentName: student.name,
@@ -1597,14 +1658,186 @@ router.post('/telemetry', async (req, res) => {
       [Number(lat), Number(lng), Number(speed), Number(heading), status, bus_id]
     );
 
+    // Feature 2: Smart Stop Geofence (500m proximity) & Route Deviation (>1500m) Processing
+    const geofenceResult = await processGeofenceAndDeviations({
+      busId: bus_id,
+      lat: Number(lat),
+      lng: Number(lng),
+      speed: Number(speed)
+    });
+
+    // Feature 3: AI-based ETA & Delay Prediction
+    const etaResult = await predictEtaAndDelay({
+      busId: bus_id,
+      currentLat: Number(lat),
+      currentLng: Number(lng),
+      currentSpeed: Number(speed)
+    });
+
     res.json({
       success: true,
       message: 'GPS Telemetry updated successfully',
       bus_id,
-      telemetry: { lat, lng, speed, heading, status, timestamp: new Date().toISOString() }
+      telemetry: { lat, lng, speed, heading, status, timestamp: new Date().toISOString() },
+      geofence: geofenceResult,
+      eta_prediction: etaResult
     });
   } catch (err) {
     console.error('Error updating bus telemetry:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==============================================================================
+// SafeRide AI — Feature 1 & 4: Live Student Count, Mismatch & Return Trip Safety
+// ==============================================================================
+
+// GET /api/bus/reconciliation/:bus_id - Live Student Count & Manifest Reconciliation (5 Counts & Exact Discrepancies)
+router.get('/reconciliation/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const tripId = req.query.trip_id || null;
+    const tripType = req.query.trip_type || 'RETURN';
+    const result = await reconcileTripAttendance({ busId, tripId, tripType });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/trips/return-safety/:bus_id - Dedicated Return Trip Safety Reconciliation Status
+router.get('/trips/return-safety/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const tripId = req.query.trip_id || 102;
+    const result = await reconcileTripAttendance({ busId, tripId, tripType: 'RETURN' });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/incidents/resolve - Non-silent Authorised Incident Resolution with Audit Log
+router.post('/incidents/resolve', async (req, res) => {
+  try {
+    const { incidentId, incident_id, resolutionType, resolution_type, resolutionNotes, resolution_notes, authorisedBy, authorised_by, passcode } = req.body;
+    const result = await resolveSafetyIncident({
+      incidentId: incidentId || incident_id,
+      resolutionType: resolutionType || resolution_type || 'MANUAL_VERIFIED_DROPOFF',
+      resolutionNotes: resolutionNotes || resolution_notes,
+      authorisedBy: authorisedBy || authorised_by || 'Transport Admin',
+      passcode
+    });
+    if (!result.success) {
+      return res.status(403).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/incidents/:bus_id - Retrieve All Safety Incidents for Bus
+router.get('/incidents/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const incidents = await dbQuery(
+      `SELECT * FROM safety_incidents WHERE bus_id = ? ORDER BY id DESC`,
+      [busId]
+    );
+    res.json({ success: true, count: incidents.length, incidents });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/trips/clearance-checklist - Mandatory Physical Walkthrough Bus Clearance Inspection
+router.post('/trips/clearance-checklist', async (req, res) => {
+  try {
+    const { trip_id, seats_checked, rear_checked, under_seats_checked, inspection_notes, inspector_name } = req.body;
+    const result = await processTripClearanceChecklist({
+      tripId: trip_id || 102,
+      seatsChecked: seats_checked,
+      rearChecked: rear_checked,
+      underSeatsChecked: under_seats_checked,
+      inspectionNotes: inspection_notes,
+      inspectorName: inspector_name
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/trips/complete - Attempt Trip Completion with Mismatch & Checklist Enforcement
+router.post('/trips/complete', async (req, res) => {
+  try {
+    const { bus_id = 1, trip_id = 102 } = req.body;
+    const recon = await reconcileTripAttendance({ busId: bus_id, tripId: trip_id, tripType: 'RETURN' });
+    
+    // Check 1: Open Mismatch Incidents
+    if (recon.open_incidents && recon.open_incidents.length > 0) {
+      return res.status(400).json({
+        success: false,
+        blocked: true,
+        alert: 'UNRESOLVED_MISMATCH',
+        message: `⛔ TRIP COMPLETION BLOCKED: There are ${recon.open_incidents.length} unresolved student mismatch safety incident(s). Authorised verification and resolution required before closing trip.`,
+        open_incidents: recon.open_incidents
+      });
+    }
+
+    // Check 2: Physical Checklist Completed
+    const trip = await dbGet('SELECT * FROM trips WHERE id = ?', [trip_id]);
+    if (!trip || !trip.inspection_checklist_completed || trip.clearance_status !== 'CLEARED') {
+      return res.status(400).json({
+        success: false,
+        blocked: true,
+        alert: 'INSPECTION_PENDING',
+        message: '⛔ TRIP COMPLETION BLOCKED: Mandatory physical walkthrough inspection checklist (seats, rear, under seats) is incomplete. Camera data alone cannot clear the bus.',
+        clearance_status: trip ? trip.clearance_status : 'PENDING'
+      });
+    }
+
+    // Complete trip safely
+    await dbRun(
+      `UPDATE trips SET status = 'COMPLETED', ended_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [trip_id]
+    );
+
+    await dispatchBusSMSNotification('TRIP_ENDED', {
+      busNumber: recon.bus_number,
+      routeName: 'Khordha',
+      timeStr: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    });
+
+    res.json({
+      success: true,
+      message: `✔ Trip ${trip_id} successfully closed and cleared. All students verified and physical walkthrough confirmed.`,
+      trip_id,
+      clearance_status: 'CLEARED'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/eta-prediction/:bus_id - Feature 3 AI Delay Prediction
+router.get('/eta-prediction/:bus_id', async (req, res) => {
+  try {
+    const busId = req.params.bus_id;
+    const result = await predictEtaAndDelay({ busId });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/bus/stops/:bus_id - Retrieve configured bus stops and geofence radii
+router.get('/stops/:bus_id', async (req, res) => {
+  try {
+    const stops = await dbQuery('SELECT * FROM bus_stops ORDER BY id ASC');
+    res.json({ success: true, count: stops.length, stops });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });

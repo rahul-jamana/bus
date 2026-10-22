@@ -496,12 +496,36 @@
       <!-- RIGHT COLUMN: LIVE INTERACTIVE MAP & ETA HUD -->
       <div class="col-lg-7">
         <div class="card-surface mb-4">
-          <!-- Stale GPS Warning Banner -->
-          <div id="stale-gps-warning" class="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center border-warning rounded-3" style="display: none;">
-            <i class="fa-solid fa-triangle-exclamation text-warning me-2 fa-lg"></i>
-            <div>
-              <strong>GPS Temporarily Unavailable:</strong>
-              <span id="stale-time-text">No telemetry updates for >90s. Driver may be in a low network area. Last reported coordinates shown.</span>
+          <!-- Stale GPS Warning Banner (Offline / >90s without updates) -->
+          <div id="stale-gps-warning" class="alert alert-warning py-2 px-3 small mb-3 align-items-center border-warning rounded-3 shadow-sm" style="display: none; background: #fffbeb; border-left: 5px solid #d97706 !important;">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-warning fa-lg"></i>
+              <div>
+                <strong class="text-dark d-block">GPS Telemetry Stale / Vehicle Offline:</strong>
+                <span id="stale-time-text" class="text-secondary">No telemetry updates for >90s. Driver may be in an unmonitored dead zone. Displaying last reported position.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 2: Smart Bus Stop & Geofence Proximity Alert Banner (500m Configurable) -->
+          <div id="proximity-alert-banner" class="alert alert-primary py-2 px-3 small mb-3 align-items-center rounded-3 shadow-sm" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #1d4ed8 !important;">
+            <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary text-white rounded-pill px-2 py-1"><i class="fa-solid fa-bell me-1"></i>PROXIMITY</span>
+                <span id="prox-alert-text" class="fw-semibold text-dark">Bus 4 is approximately 500 metres from your child's stop. Estimated arrival: 04:08 PM.</span>
+              </div>
+              <span class="badge bg-light text-primary border fw-bold" id="prox-geofence-tag">500m Geofence Active</span>
+            </div>
+          </div>
+
+          <!-- Feature 3: Meaningful Delay Alert Banner (Delay >= 10m) -->
+          <div id="delay-alert-banner" class="alert alert-danger py-2 px-3 small mb-3 align-items-center rounded-3 shadow-sm" style="display: none; background: #fff1f2; border: 1px solid #fecdd3; border-left: 5px solid #e11d48 !important;">
+            <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-danger fa-lg"></i>
+                <span id="delay-alert-text" class="fw-bold text-danger">Bus 4 is delayed by approximately 12 minutes. Updated ETA: 04:12 PM.</span>
+              </div>
+              <span class="badge bg-danger text-white rounded-pill px-3 py-1 fw-bold" id="delay-badge-min">+12 MIN DELAY</span>
             </div>
           </div>
 
@@ -512,9 +536,41 @@
               <h4 class="fw-bold brand-font mb-0" id="live-eta-countdown">~5 mins away (Pitapalli Square)</h4>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold shadow-sm">
+              <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold shadow-sm" id="live-gps-badge">
                 <i class="fa-solid fa-satellite-dish me-1"></i> Live GPS
               </span>
+            </div>
+          </div>
+
+          <!-- Feature 3: AI-Based Delay Prediction HUD (Scheduled vs Predicted vs Delay) -->
+          <div class="card bg-light border-0 rounded-4 p-3 mb-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small fw-bold text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-brain text-primary me-1"></i>Arrival & Delay Forecast
+              </span>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 fw-bold" id="eta-model-badge" style="font-size: 0.72rem;">
+                AI Historical Regression Model
+              </span>
+            </div>
+            <div class="row g-2 text-center">
+              <div class="col-4">
+                <div class="bg-white p-2 rounded-3 border">
+                  <span class="small text-muted d-block" style="font-size: 0.72rem;">Scheduled Arrival</span>
+                  <strong class="text-dark brand-font fs-6" id="hud-scheduled-time">04:00 PM</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="bg-white p-2 rounded-3 border">
+                  <span class="small text-muted d-block" style="font-size: 0.72rem;">Predicted Arrival</span>
+                  <strong class="text-primary brand-font fs-6" id="hud-predicted-time">04:12 PM</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="bg-white p-2 rounded-3 border">
+                  <span class="small text-muted d-block" style="font-size: 0.72rem;">Estimated Delay</span>
+                  <strong class="text-danger brand-font fs-6" id="hud-delay-time">+12 mins</strong>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -549,6 +605,7 @@
     let pMap = null;
     let busMarker = null;
     let currentBusId = 1;
+    let currentStudent = null;
     let pollInterval = null;
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -587,11 +644,13 @@
         const res = await fetch(`/api/bus/parent-track/${encodeURIComponent(q)}`);
         const data = await res.json();
         if (data.success) {
+          currentStudent = data.student;
           renderStudentInfo(data.student, data.bus, data.latest_log, data.notifications, data.journey);
           if (data.bus) {
             currentBusId = data.bus.id;
             updateMapPosition(data.bus);
           }
+          await updateEtaPrediction(currentBusId, currentStudent);
         } else {
           alert('No student found matching query: ' + q);
         }
@@ -793,8 +852,107 @@
           updateMapPosition(data.bus);
           const speedEl = document.getElementById('bus-speed-label');
           if (speedEl) speedEl.innerText = `${Math.round(data.bus.speed || 0)} km/h`;
+
+          // Stale GPS Warning Banner (Offline / >90s without telemetry)
+          const staleWarning = document.getElementById('stale-gps-warning');
+          const liveGpsBadge = document.getElementById('live-gps-badge');
+          if (staleWarning) {
+            if (data.bus.is_gps_stale) {
+              staleWarning.style.display = 'flex';
+              document.getElementById('stale-time-text').innerText = `No telemetry updates for >90s. Telemetry last reported ${data.bus.last_updated_human || 'recently'}. Driver may be in an offline dead zone. Displaying last known coordinates.`;
+              if (liveGpsBadge) {
+                liveGpsBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold shadow-sm';
+                liveGpsBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> Offline / Stale GPS';
+              }
+            } else {
+              staleWarning.style.display = 'none';
+              if (liveGpsBadge) {
+                liveGpsBadge.className = 'badge bg-white text-primary px-3 py-2 rounded-pill fw-bold shadow-sm';
+                liveGpsBadge.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Live GPS';
+              }
+            }
+          }
         }
+        await updateEtaPrediction(currentBusId, currentStudent);
       } catch (e) {}
+    }
+
+    async function updateEtaPrediction(busId, student) {
+      if (!busId) return;
+      try {
+        const res = await fetch(`/api/bus/eta-prediction/${busId}`);
+        const data = await res.json();
+        if (!data || !data.success) return;
+
+        // 1. Select the relevant stop for this student (or fallback to primary prediction)
+        const stopName = (student && (student.drop_stop || student.pickup_stop)) || 'Pitapalli Square';
+        let targetStop = (data.stop_predictions || []).find(s => 
+          s.stop_name.toLowerCase().includes(stopName.toLowerCase()) || 
+          stopName.toLowerCase().includes(s.stop_name.toLowerCase())
+        );
+        if (!targetStop) {
+          targetStop = data.primary_prediction || (data.stop_predictions && data.stop_predictions[0]);
+        }
+
+        if (targetStop) {
+          // Update HUD values
+          const schedEl = document.getElementById('hud-scheduled-time');
+          const predEl = document.getElementById('hud-predicted-time');
+          const delayEl = document.getElementById('hud-delay-time');
+
+          if (schedEl) schedEl.innerText = targetStop.scheduled_time || '04:00 PM';
+          if (predEl) predEl.innerText = targetStop.predicted_time || '04:12 PM';
+
+          const delayMins = targetStop.delay_minutes ?? 0;
+          if (delayEl) {
+            if (delayMins > 0) {
+              delayEl.innerText = `+${delayMins} mins`;
+              delayEl.className = 'text-danger brand-font fs-6';
+            } else if (delayMins < 0) {
+              delayEl.innerText = `${delayMins} mins (Early)`;
+              delayEl.className = 'text-success brand-font fs-6';
+            } else {
+              delayEl.innerText = 'On Time';
+              delayEl.className = 'text-success brand-font fs-6';
+            }
+          }
+
+          // Model Badge
+          const badgeEl = document.getElementById('eta-model-badge');
+          if (badgeEl) {
+            badgeEl.innerText = data.calculation_label || 'AI Historical Regression Model';
+          }
+
+          // Feature 2: 500m Geofence Stop Proximity Alert Banner
+          const proxBanner = document.getElementById('proximity-alert-banner');
+          const proxText = document.getElementById('prox-alert-text');
+          const busNum = data.bus_number || `Bus #${busId}`;
+          if (targetStop.distance_meters <= 500) {
+            if (proxBanner) proxBanner.style.display = 'block';
+            if (proxText) {
+              proxText.innerText = `${busNum} is approximately ${Math.round(targetStop.distance_meters)} metres from your child's stop (${targetStop.stop_name}). Estimated arrival: ${targetStop.predicted_time}.`;
+            }
+          } else {
+            if (proxBanner) proxBanner.style.display = 'none';
+          }
+
+          // Feature 3: Meaningful Delay Alert Banner (>= 10 mins)
+          const delayBanner = document.getElementById('delay-alert-banner');
+          const delayText = document.getElementById('delay-alert-text');
+          const delayBadge = document.getElementById('delay-badge-min');
+          if (delayMins >= 10) {
+            if (delayBanner) delayBanner.style.display = 'block';
+            if (delayText) {
+              delayText.innerText = `${busNum} is delayed by approximately ${delayMins} minutes. Updated ETA: ${targetStop.predicted_time}.`;
+            }
+            if (delayBadge) delayBadge.innerText = `+${delayMins} MIN DELAY`;
+          } else {
+            if (delayBanner) delayBanner.style.display = 'none';
+          }
+        }
+      } catch (err) {
+        console.warn('ETA prediction fetch error:', err);
+      }
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -210,6 +210,36 @@ async function dispatchBusSMSNotification(type, data) {
       message = `SchoolSafe Update: ${busNumber} has completed its trip at ${timeStr}. Sleeping-child physical inspection verified.`;
       break;
 
+    case 'GEOFENCE_APPROACH':
+      subject = `📍 Approaching Bus Stop Alert: ${studentName}`;
+      message = `Bus ${busNumber.replace('Bus #', '').replace('Bus ', '')} is approximately ${data.distanceMeters || 500} metres from your child's stop. Estimated arrival: ${data.etaTime || '4:08 PM'}.`;
+      break;
+
+    case 'DELAY_ALERT':
+      subject = `⏱️ Bus Delay Notification: ${busNumber}`;
+      message = `Bus ${busNumber.replace('Bus #', '').replace('Bus ', '')} is delayed by approximately ${data.delayMinutes || 12} minutes. Updated ETA: ${data.etaTime || '4:12 PM'}.`;
+      break;
+
+    case 'ROUTE_DEVIATION':
+      subject = `⚠️ Route Deviation Alert: ${busNumber}`;
+      message = `SchoolSafe TRANSPORT ALERT: ${busNumber} has deviated from the approved route by ${data.deviationMeters || 1600}m at ${timeStr}. Authorised transport staff alerted.`;
+      break;
+
+    case 'UNRESOLVED_MISMATCH_STAFF':
+      subject = `🚨 SAFETY ALERT: Missing Exit Record (${busNumber})`;
+      message = `STUDENT COUNT MISMATCH — ACTION REQUIRED: ${busNumber} has missing exit record for ${studentName} (ID: ${rollNumber}). Physical inspection and authorised resolution required.`;
+      break;
+
+    case 'UNRESOLVED_BOARDING_STAFF':
+      subject = `⚠️ ATTENDANCE EXCEPTION: Did Not Board (${busNumber})`;
+      message = `ATTENDANCE EXCEPTION: ${busNumber} return trip manifest missing boarding record for ${studentName} (ID: ${rollNumber}). Confirm absence or alternate transport.`;
+      break;
+
+    case 'UNRESOLVED_SAFETY_PARENT':
+      subject = `SafeRide AI: Attendance Status Notice - ${studentName}`;
+      message = `SafeRide AI Notice: ${studentName} has an unresolved attendance status for ${busNumber} (${data.reason || 'Pending verification'}). Transport staff are actively verifying.`;
+      break;
+
     default:
       message = `SchoolSafe: Status update for ${studentName} on ${busNumber} at ${timeStr}.`;
   }

@@ -482,6 +482,147 @@ async function initDatabase() {
           )
         `);
 
+        // SafeRide AI — Core Transport Safety & Reconciliation Tables
+        // 1. Bus Stops Table (Configurable Stop Geofences & GPS Coordinates)
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS bus_stops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            route_id INTEGER DEFAULT 1,
+            route_name TEXT DEFAULT 'Khordha',
+            stop_name TEXT NOT NULL,
+            stop_sequence INTEGER DEFAULT 1,
+            gps_lat REAL NOT NULL,
+            gps_lng REAL NOT NULL,
+            geofence_radius_meters INTEGER DEFAULT 500,
+            scheduled_pickup_time TEXT,
+            scheduled_drop_time TEXT,
+            is_active INTEGER DEFAULT 1
+          )
+        `);
+
+        // 2. Trip Manifest Table (Student Manifest for Trip Reconciliation)
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS trip_manifest (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trip_id INTEGER NOT NULL,
+            trip_code TEXT DEFAULT 'TRIP-RET-102',
+            bus_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            roll_number TEXT,
+            student_name TEXT NOT NULL,
+            assigned_stop_id INTEGER,
+            stop_name TEXT,
+            parent_name TEXT,
+            parent_phone TEXT,
+            guardian_code TEXT,
+            is_expected INTEGER DEFAULT 1,
+            boarded INTEGER DEFAULT 0,
+            boarded_time TEXT,
+            boarded_verification_method TEXT,
+            exited INTEGER DEFAULT 0,
+            exited_time TEXT,
+            exited_verification_method TEXT,
+            attendance_status TEXT DEFAULT 'EXPECTED',
+            unresolved_flag INTEGER DEFAULT 0,
+            unresolved_reason TEXT,
+            resolution_status TEXT DEFAULT 'NONE',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // 3. Safety Incidents & Authorised Resolutions Table
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS safety_incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            incident_id TEXT,
+            bus_id INTEGER NOT NULL,
+            trip_id INTEGER NOT NULL,
+            trip_code TEXT,
+            incident_type TEXT NOT NULL,
+            severity TEXT DEFAULT 'HIGH',
+            student_id INTEGER,
+            roll_number TEXT,
+            student_name TEXT,
+            description TEXT,
+            details TEXT,
+            gps_lat REAL,
+            gps_lng REAL,
+            status TEXT DEFAULT 'OPEN',
+            authorised_by TEXT,
+            resolved_by TEXT,
+            resolved_at DATETIME,
+            resolution_type TEXT,
+            resolution_notes TEXT,
+            audit_log_entry TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // Migration helper for safety_incidents table
+        try {
+          const incCols = await dbQuery("PRAGMA table_info(safety_incidents)");
+          const incColNames = incCols.map(c => c.name);
+          if (!incColNames.includes('incident_id')) await dbRun("ALTER TABLE safety_incidents ADD COLUMN incident_id TEXT");
+          if (!incColNames.includes('details')) await dbRun("ALTER TABLE safety_incidents ADD COLUMN details TEXT");
+          if (!incColNames.includes('resolved_by')) await dbRun("ALTER TABLE safety_incidents ADD COLUMN resolved_by TEXT");
+        } catch (e) {}
+
+        // 4. Trip Segment History Table (Historical Travel Time Data for AI ETA)
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS trip_segment_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            route_id INTEGER DEFAULT 1,
+            from_stop_id INTEGER,
+            from_stop_name TEXT,
+            to_stop_id INTEGER,
+            to_stop_name TEXT,
+            historical_duration_seconds INTEGER DEFAULT 600,
+            sample_count INTEGER DEFAULT 15,
+            avg_speed_kmh REAL DEFAULT 32.5,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // 5. ETA Predictions & Accuracy Evaluation Table
+        await dbRun(`
+          CREATE TABLE IF NOT EXISTS eta_predictions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bus_id INTEGER NOT NULL,
+            trip_id INTEGER NOT NULL,
+            stop_id INTEGER,
+            stop_name TEXT,
+            prediction_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            scheduled_time TEXT,
+            predicted_arrival_time TEXT,
+            estimated_delay_minutes INTEGER DEFAULT 0,
+            calculation_method TEXT DEFAULT 'AI_HISTORICAL',
+            actual_arrival_time TEXT,
+            evaluation_error_seconds INTEGER
+          )
+        `);
+
+        // Migration helper for trips table
+        try {
+          const tripCols = await dbQuery("PRAGMA table_info(trips)");
+          const tripColNames = tripCols.map(c => c.name);
+          if (!tripColNames.includes('trip_code')) await dbRun("ALTER TABLE trips ADD COLUMN trip_code TEXT DEFAULT 'TRIP-RET-102'");
+          if (!tripColNames.includes('scheduled_departure_time')) await dbRun("ALTER TABLE trips ADD COLUMN scheduled_departure_time TEXT DEFAULT '04:00 PM'");
+          if (!tripColNames.includes('scheduled_return_time')) await dbRun("ALTER TABLE trips ADD COLUMN scheduled_return_time TEXT DEFAULT '05:15 PM'");
+          if (!tripColNames.includes('expected_count')) await dbRun("ALTER TABLE trips ADD COLUMN expected_count INTEGER DEFAULT 28");
+          if (!tripColNames.includes('boarded_count')) await dbRun("ALTER TABLE trips ADD COLUMN boarded_count INTEGER DEFAULT 0");
+          if (!tripColNames.includes('exited_count')) await dbRun("ALTER TABLE trips ADD COLUMN exited_count INTEGER DEFAULT 0");
+          if (!tripColNames.includes('unresolved_count')) await dbRun("ALTER TABLE trips ADD COLUMN unresolved_count INTEGER DEFAULT 0");
+          if (!tripColNames.includes('safety_status')) await dbRun("ALTER TABLE trips ADD COLUMN safety_status TEXT DEFAULT 'CLEAR'");
+          if (!tripColNames.includes('route_deviation_flag')) await dbRun("ALTER TABLE trips ADD COLUMN route_deviation_flag INTEGER DEFAULT 0");
+          if (!tripColNames.includes('last_geofence_stop_id')) await dbRun("ALTER TABLE trips ADD COLUMN last_geofence_stop_id INTEGER DEFAULT 0");
+          if (!tripColNames.includes('seats_checked')) await dbRun("ALTER TABLE trips ADD COLUMN seats_checked INTEGER DEFAULT 0");
+          if (!tripColNames.includes('rear_checked')) await dbRun("ALTER TABLE trips ADD COLUMN rear_checked INTEGER DEFAULT 0");
+          if (!tripColNames.includes('under_seats_checked')) await dbRun("ALTER TABLE trips ADD COLUMN under_seats_checked INTEGER DEFAULT 0");
+          if (!tripColNames.includes('clearance_status')) await dbRun("ALTER TABLE trips ADD COLUMN clearance_status TEXT DEFAULT 'PENDING'");
+          if (!tripColNames.includes('inspection_signed_by')) await dbRun("ALTER TABLE trips ADD COLUMN inspection_signed_by TEXT DEFAULT NULL");
+          if (!tripColNames.includes('offline_sync_pending')) await dbRun("ALTER TABLE trips ADD COLUMN offline_sync_pending INTEGER DEFAULT 0");
+        } catch (e) {}
+
         // SOS Incidents Table
         await dbRun(`
           CREATE TABLE IF NOT EXISTS sos_alerts (
@@ -779,6 +920,126 @@ async function initDatabase() {
           }
           console.log('Seeded initial attendance logs for visual reporting');
         }
+
+        // ==============================================================================
+        // SafeRide AI — Seed Configurable Bus Stops & Historical Segments
+        // ==============================================================================
+        const existingStops = await dbGet('SELECT COUNT(*) as count FROM bus_stops');
+        if (existingStops.count === 0) {
+          const stopsSeed = [
+            [1, 'Khordha', 'BEC Campus Gate', 1, 20.1782, 85.7061, 500, '07:00 AM', '04:00 PM'],
+            [1, 'Khordha', 'Khordha Bypass', 2, 20.1875, 85.6214, 500, '07:30 AM', '04:20 PM'],
+            [1, 'Khordha', 'Pitapalli Square', 3, 20.2105, 85.6702, 500, '07:45 AM', '04:40 PM'],
+            [1, 'Khordha', 'Master Canteen', 4, 20.2648, 85.8398, 500, '08:15 AM', '05:05 PM']
+          ];
+          for (const st of stopsSeed) {
+            await dbRun(
+              `INSERT INTO bus_stops (route_id, route_name, stop_name, stop_sequence, gps_lat, gps_lng, geofence_radius_meters, scheduled_pickup_time, scheduled_drop_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              st
+            );
+          }
+          console.log('Seeded 4 SafeRide AI configurable bus stops with 500m geofence');
+        }
+
+        const existingSegments = await dbGet('SELECT COUNT(*) as count FROM trip_segment_history');
+        if (existingSegments.count === 0) {
+          const segmentsSeed = [
+            [1, 1, 'BEC Campus Gate', 2, 'Khordha Bypass', 1200, 20, 34.5],
+            [1, 2, 'Khordha Bypass', 3, 'Pitapalli Square', 1200, 22, 31.0],
+            [1, 3, 'Pitapalli Square', 4, 'Master Canteen', 1500, 18, 33.2]
+          ];
+          for (const seg of segmentsSeed) {
+            await dbRun(
+              `INSERT INTO trip_segment_history (route_id, from_stop_id, from_stop_name, to_stop_id, to_stop_name, historical_duration_seconds, sample_count, avg_speed_kmh) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              seg
+            );
+          }
+          console.log('Seeded historical trip segments for AI delay prediction');
+        }
+
+        // ==============================================================================
+        // SafeRide AI — Seed 28-Student Return Manifest & Active Trip 102 for Bus #4
+        // ==============================================================================
+        const existingTrip102 = await dbGet('SELECT * FROM trips WHERE id = 102 OR trip_code = "TRIP-RET-102"');
+        if (!existingTrip102) {
+          await dbRun(
+            `INSERT INTO trips (id, bus_id, trip_type, trip_code, status, scheduled_departure_time, scheduled_return_time, expected_count, boarded_count, exited_count, unresolved_count, safety_status, clearance_status, driver_name) 
+             VALUES (102, 1, 'RETURN', 'TRIP-RET-102', 'ACTIVE', '04:00 PM', '05:15 PM', 28, 0, 0, 0, 'CLEAR', 'PENDING', 'Ramesh Kumar')`
+          );
+          console.log('Seeded Bus #4 Return Trip 102 (Scheduled: 04:00 PM, Expected: 28 students)');
+        }
+
+        // 28 Defined Student Roster for Trip 102 Manifest
+        const manifestRoster = [
+          { name: 'Rohan Verma', roll: 'ROHAN-04', parent: 'Manoj Verma', phone: '+91 9876543210', stopId: 3, stop: 'Pitapalli Square', code: '7421' },
+          { name: 'Munu Nial', roll: 'BEC26081', parent: 'Subash Nial', phone: '+91 9998887771', stopId: 2, stop: 'Khordha Bypass', code: '2608' },
+          { name: 'Aarav Sharma', roll: 'SR-2026-003', parent: 'Rajesh Sharma', phone: '+91 9876500003', stopId: 3, stop: 'Pitapalli Square', code: '1003' },
+          { name: 'Ananya Sen', roll: 'SR-2026-004', parent: 'Alok Sen', phone: '+91 9876500004', stopId: 2, stop: 'Khordha Bypass', code: '1004' },
+          { name: 'Priya Nair', roll: 'SR-2026-005', parent: 'K. Nair', phone: '+91 9876500005', stopId: 4, stop: 'Master Canteen', code: '1005' },
+          { name: 'Dev Patel', roll: 'SR-2026-006', parent: 'Nilesh Patel', phone: '+91 9876500006', stopId: 2, stop: 'Khordha Bypass', code: '1006' },
+          { name: 'Sneha Rao', roll: 'SR-2026-007', parent: 'Venkat Rao', phone: '+91 9876500007', stopId: 3, stop: 'Pitapalli Square', code: '1007' },
+          { name: 'Ishaan Gupta', roll: 'SR-2026-008', parent: 'Sanjay Gupta', phone: '+91 9876500008', stopId: 4, stop: 'Master Canteen', code: '1008' },
+          { name: 'Diya Mishra', roll: 'SR-2026-009', parent: 'Ashok Mishra', phone: '+91 9876500009', stopId: 3, stop: 'Pitapalli Square', code: '1009' },
+          { name: 'Kabir Das', roll: 'SR-2026-010', parent: 'Tarun Das', phone: '+91 9876500010', stopId: 2, stop: 'Khordha Bypass', code: '1010' },
+          { name: 'Riya Choudhury', roll: 'SR-2026-011', parent: 'Pradeep Choudhury', phone: '+91 9876500011', stopId: 4, stop: 'Master Canteen', code: '1011' },
+          { name: 'Vivaan Jena', roll: 'SR-2026-012', parent: 'Bipin Jena', phone: '+91 9876500012', stopId: 3, stop: 'Pitapalli Square', code: '1012' },
+          { name: 'Tanvi Mohanty', roll: 'SR-2026-013', parent: 'Debashis Mohanty', phone: '+91 9876500013', stopId: 2, stop: 'Khordha Bypass', code: '1013' },
+          { name: 'Ayaan Samal', roll: 'SR-2026-014', parent: 'R. Samal', phone: '+91 9876500014', stopId: 4, stop: 'Master Canteen', code: '1014' },
+          { name: 'Meera Sahu', roll: 'SR-2026-015', parent: 'Kailash Sahu', phone: '+91 9876500015', stopId: 3, stop: 'Pitapalli Square', code: '1015' },
+          { name: 'Aditya Nayak', roll: 'SR-2026-016', parent: 'Manoranjan Nayak', phone: '+91 9876500016', stopId: 2, stop: 'Khordha Bypass', code: '1016' },
+          { name: 'Kavya Tripathy', roll: 'SR-2026-017', parent: 'Sarat Tripathy', phone: '+91 9876500017', stopId: 4, stop: 'Master Canteen', code: '1017' },
+          { name: 'Arjun Barik', roll: 'SR-2026-018', parent: 'Dillip Barik', phone: '+91 9876500018', stopId: 3, stop: 'Pitapalli Square', code: '1018' },
+          { name: 'Shreya Swain', roll: 'SR-2026-019', parent: 'Santosh Swain', phone: '+91 9876500019', stopId: 2, stop: 'Khordha Bypass', code: '1019' },
+          { name: 'Reyansh Pradhan', roll: 'SR-2026-020', parent: 'Bibhuti Pradhan', phone: '+91 9876500020', stopId: 4, stop: 'Master Canteen', code: '1020' },
+          { name: 'Anika Mohapatra', roll: 'SR-2026-021', parent: 'Soumya Mohapatra', phone: '+91 9876500021', stopId: 3, stop: 'Pitapalli Square', code: '1021' },
+          { name: 'Dhruv Das', roll: 'SR-2026-022', parent: 'Hrushikesh Das', phone: '+91 9876500022', stopId: 2, stop: 'Khordha Bypass', code: '1022' },
+          { name: 'Samaira Sethi', roll: 'SR-2026-023', parent: 'Niranjan Sethi', phone: '+91 9876500023', stopId: 4, stop: 'Master Canteen', code: '1023' },
+          { name: 'Vihaan Panda', roll: 'SR-2026-024', parent: 'Gagan Panda', phone: '+91 9876500024', stopId: 3, stop: 'Pitapalli Square', code: '1024' },
+          { name: 'Myra Parida', roll: 'SR-2026-025', parent: 'Subrat Parida', phone: '+91 9876500025', stopId: 2, stop: 'Khordha Bypass', code: '1025' },
+          { name: 'Atharv Behera', roll: 'SR-2026-026', parent: 'Pramod Behera', phone: '+91 9876500026', stopId: 4, stop: 'Master Canteen', code: '1026' },
+          { name: 'Avani Panigrahi', roll: 'SR-2026-027', parent: 'Jayant Panigrahi', phone: '+91 9876500027', stopId: 3, stop: 'Pitapalli Square', code: '1027' },
+          { name: 'Advait Sahoo', roll: 'SR-2026-028', parent: 'Ramesh Sahoo', phone: '+91 9876500028', stopId: 2, stop: 'Khordha Bypass', code: '1028' }
+        ];
+
+        for (const item of manifestRoster) {
+          // Check student entry
+          let sRecord = await dbGet('SELECT * FROM students WHERE roll_number = ? OR name = ?', [item.roll, item.name]);
+          let sId = sRecord ? sRecord.id : null;
+          if (!sRecord) {
+            const insRes = await dbRun(
+              `INSERT INTO students (student_id, name, roll_number, registration_number, branch, department, semester, section, mobile, phone, email, address, parent_name, parent_mobile, emergency_contact, face_enrolled, consent_face_enrolled, assigned_bus_id, pickup_stop_name, drop_stop_name, guardian_code) 
+               VALUES (?, ?, ?, ?, 'Class V', 'Primary Wing', 'Grade 5', 'A', ?, ?, ?, 'Khordha, Odisha', ?, ?, ?, 1, 1, 1, ?, ?, ?)`,
+              [`STU-${item.roll}`, item.name, item.roll, `REG-${item.roll}`, item.phone, item.phone, `${item.name.toLowerCase().replace(' ', '.')}@schoolsafe.edu`, item.parent, item.phone, item.phone, item.stop, item.stop, item.code]
+            );
+            sId = insRes.id;
+          }
+
+          // Ensure transport card
+          const card = await dbGet('SELECT * FROM student_transport_cards WHERE student_id = ? AND status = "ACTIVE"', [sId]);
+          if (!card) {
+            const cardUuid = `SC-CARD-${item.roll}`;
+            const rfidUid = `RF-${item.code}-04`;
+            await dbRun(
+              `INSERT INTO student_transport_cards (student_id, card_uuid, rfid_uid, status, issued_by) VALUES (?, ?, ?, 'ACTIVE', 'Transport Admin')`,
+              [sId, cardUuid, rfidUid]
+            );
+            await dbRun(
+              `UPDATE students SET transport_card_id = ?, rfid_uid = ?, card_status = 'ACTIVE' WHERE id = ?`,
+              [cardUuid, rfidUid, sId]
+            );
+          }
+
+          // Ensure in trip_manifest for Trip 102
+          const inManifest = await dbGet('SELECT * FROM trip_manifest WHERE trip_id = 102 AND (student_id = ? OR roll_number = ?)', [sId, item.roll]);
+          if (!inManifest) {
+            await dbRun(
+              `INSERT INTO trip_manifest (trip_id, trip_code, bus_id, student_id, roll_number, student_name, assigned_stop_id, stop_name, parent_name, parent_phone, guardian_code, is_expected, attendance_status) 
+               VALUES (102, 'TRIP-RET-102', 1, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'EXPECTED')`,
+              [sId, item.roll, item.name, item.stopId, item.stop, item.parent, item.phone, item.code]
+            );
+          }
+        }
+        console.log('Seeded all 28 expected students for Bus #4 Return Trip 102 Manifest');
 
         resolve();
       } catch (err) {
