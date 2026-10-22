@@ -152,6 +152,18 @@ if (require.main === module) {
         console.log(`🌐 Local Web Server: http://localhost:${PORT}`);
         console.log(`📱 Mobile Network:   http://${localIp}:${PORT}?mode=mobile`);
         console.log(`====================================================`);
+
+        // 30-Day Data Retention Policy: Auto-purge records older than 30 days
+        try {
+          const { purgeOldLogs } = require('./utils/busReports');
+          purgeOldLogs(30).catch(err => console.warn('[Retention] Initial purge notice:', err.message));
+          // Schedule daily purge check
+          setInterval(() => {
+            purgeOldLogs(30).catch(err => console.warn('[Retention] Scheduled purge notice:', err.message));
+          }, 24 * 60 * 60 * 1000);
+        } catch (retentionErr) {
+          console.warn('[Retention] Could not initialize auto-purge:', retentionErr.message);
+        }
       });
     })
     .catch((err) => {

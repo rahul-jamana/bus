@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { dbQuery, dbGet, dbRun } = require('../db/database');
 const { dispatchBusSMSNotification } = require('./notifications');
+const { 
+  generateMonthlyAttendancePdf, 
+  generateDailyAttendancePdf, 
+  purgeOldLogs, 
+  getRetentionStats 
+} = require('../utils/busReports');
 
 // POST /api/bus/board - Verified Boarding with Wrong Bus Detection & Audited Staff Override
 router.post('/board', async (req, res) => {
@@ -1066,6 +1072,54 @@ router.get('/attendance-report', async (req, res) => {
   } catch (err) {
     console.error('Error generating attendance report:', err);
     res.status(500).json({ success: false, message: 'Server error generating attendance report: ' + err.message });
+  }
+});
+
+// GET /api/bus/reports/monthly-pdf - Download Official Monthly Attendance PDF
+router.get('/reports/monthly-pdf', async (req, res) => {
+  try {
+    const { month, bus_id } = req.query;
+    await generateMonthlyAttendancePdf(res, { month, busId: bus_id });
+  } catch (err) {
+    console.error('Error generating monthly PDF:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'Error generating monthly PDF: ' + err.message });
+    }
+  }
+});
+
+// GET /api/bus/reports/daily-pdf - Download Official Day Attendance PDF
+router.get('/reports/daily-pdf', async (req, res) => {
+  try {
+    const { date, bus_id } = req.query;
+    await generateDailyAttendancePdf(res, { date, busId: bus_id });
+  } catch (err) {
+    console.error('Error generating daily PDF:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'Error generating daily PDF: ' + err.message });
+    }
+  }
+});
+
+// GET /api/bus/retention-stats - Diagnostics for 30-day retention policy
+router.get('/retention-stats', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const stats = await getRetentionStats(days);
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/bus/purge-old-data - Admin Purges Records Older than 30 Days
+router.post('/purge-old-data', async (req, res) => {
+  try {
+    const days = parseInt(req.body.days) || 30;
+    const result = await purgeOldLogs(days);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
