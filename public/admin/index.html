@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transport Admin Portal — SchoolSafe AI Bus Tracking</title>
+  <title>Transport Administration Portal — School Bus Fleet Management</title>
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -499,7 +499,7 @@
             <i class="fa-solid fa-shield-halved fa-2x"></i>
           </div>
           <h4 class="fw-bold brand-font text-primary">Transport Admin Login</h4>
-          <p class="text-muted small">School Bus Fleet & Face AI Management System</p>
+          <p class="text-muted small">School Bus Fleet & Student Transportation Management</p>
         </div>
 
         <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
@@ -550,8 +550,8 @@
             <i class="fa-solid fa-shield-halved fa-lg"></i>
           </div>
           <div>
-            <div class="fw-bold brand-font fs-5 text-white lh-1">SchoolSafe<span style="color: #38bdf8;">.ai</span></div>
-            <span class="sidebar-brand-sub">Admin Transport OS</span>
+            <div class="fw-bold brand-font fs-5 text-white lh-1">SchoolSafe <span style="color: #38bdf8; font-weight: 500;">Transport</span></div>
+            <span class="sidebar-brand-sub">Administration Console</span>
           </div>
         </a>
       </div>
@@ -599,11 +599,11 @@
             <i class="fa-solid fa-chevron-up small text-muted"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-dark shadow-lg border-secondary mb-2 rounded-3 w-100 p-2">
-            <li><a class="dropdown-item py-2 rounded-2" href="/bus-terminal" target="_blank"><i class="fa-solid fa-camera me-2 text-success"></i>Bus Door AI Terminal</a></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/bus-terminal" target="_blank"><i class="fa-solid fa-camera me-2 text-success"></i>Bus Door Terminal</a></li>
             <li><a class="dropdown-item py-2 rounded-2" href="/parent" target="_blank"><i class="fa-solid fa-heart me-2 text-danger"></i>Parent Live Tracker</a></li>
-            <li><a class="dropdown-item py-2 rounded-2" href="/driver" target="_blank"><i class="fa-solid fa-mobile-screen me-2 text-info"></i>Driver GPS Cockpit</a></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/driver" target="_blank"><i class="fa-solid fa-mobile-screen me-2 text-info"></i>Driver Cockpit</a></li>
             <li><hr class="dropdown-divider border-secondary my-1"></li>
-            <li><a class="dropdown-item py-2 rounded-2" href="/" target="_blank"><i class="fa-solid fa-house me-2 text-warning"></i>SchoolSafe Home Hub</a></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/" target="_blank"><i class="fa-solid fa-house me-2 text-warning"></i>SchoolSafe Portal Hub</a></li>
           </ul>
         </div>
 
@@ -637,7 +637,7 @@
             <i class="fa-solid fa-bars fa-lg"></i>
           </button>
           <div>
-            <h5 class="fw-bold brand-font text-dark mb-0" id="topbar-page-title">Register Student & Face AI</h5>
+            <h5 class="fw-bold brand-font text-dark mb-0" id="topbar-page-title">Register Student & Face Verification</h5>
             <span class="text-muted small" style="font-size: 0.75rem;">School Bus Fleet Management Console</span>
           </div>
         </div>
@@ -723,7 +723,7 @@
       </div>
     </div>
 
-    <!-- TAB 1: STUDENT REGISTRATION & LIVE FACE AI CAPTURE -->
+    <!-- TAB 1: STUDENT REGISTRATION & LIVE FACE CAPTURE -->
     <div id="enroll-tab" class="tab-content-panel">
       <div class="row g-4">
         <!-- Student Info Form -->
@@ -817,7 +817,7 @@
                       Parent Consent Recorded for Biometric Verification (DPDP Act 2023 Compliance)
                     </label>
                     <div class="text-muted" style="font-size: 0.72rem; margin-left: 24px;">
-                      Facial templates are hashed locally into 128D mathematical vectors. Full student data protection is strictly maintained.
+                      Facial templates are hashed locally into secure biometric templates. Full student data protection is strictly maintained.
                     </div>
                   </div>
                 </div>
@@ -832,7 +832,7 @@
             <h5 class="fw-bold brand-font text-primary mb-1">
               <i class="fa-solid fa-camera-retro me-2"></i>Biometric Face Enrollment
             </h5>
-            <p class="text-muted small mb-3">Position student's face in the camera frame to extract 128D AI descriptor</p>
+            <p class="text-muted small mb-3">Position student's face in the camera frame for biometric facial registration</p>
 
             <div class="camera-container mb-3">
               <video id="webcam-video" autoplay playsinline muted></video>
@@ -845,10 +845,10 @@
             <!-- Face Detection Quality Indicator -->
             <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded-3 border">
               <div class="d-flex align-items-center">
-                <i class="fa-solid fa-brain text-primary me-2 fa-lg"></i>
+                <i class="fa-solid fa-id-card-clip text-primary me-2 fa-lg"></i>
                 <div>
-                  <div class="small fw-bold" id="ai-feedback-text">AI Ready — Awaiting Face</div>
-                  <div class="text-muted" style="font-size: 0.75rem;" id="ai-model-status">SSD MobileNet Loaded</div>
+                  <div class="small fw-bold" id="ai-feedback-text">Camera Ready — Awaiting Face</div>
+                  <div class="text-muted" style="font-size: 0.75rem;" id="ai-model-status">Biometric Engine Ready</div>
                 </div>
               </div>
               <span class="badge bg-primary rounded-pill px-3 py-2" id="ai-confidence-badge">0%</span>
@@ -908,10 +908,10 @@
                 <img id="enrolled-preview-img" src="" class="rounded-circle border border-primary shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
                 <div class="text-start">
                   <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-block mb-1 text-center" id="preview-vector-badge">
-                    <i class="fa-solid fa-brain me-1"></i> 30x 128D AI Embeddings
+                    <i class="fa-solid fa-camera me-1"></i> 30 Facial Sample Descriptors
                   </span>
                   <span class="small text-muted d-block" style="font-size: 0.72rem;">
-                    Multi-angle facial descriptors stored for sub-second recognition on school buses.
+                    Multi-angle facial verification profile stored for quick verification on school buses.
                   </span>
                 </div>
               </div>
@@ -1291,8 +1291,8 @@
               <div class="d-flex align-items-center gap-2">
                 <div class="bg-primary-subtle text-primary p-2 rounded-circle"><i class="fa-solid fa-camera"></i></div>
                 <div>
-                  <span class="small fw-bold text-dark d-block">Method 1 — AI Face Recognition</span>
-                  <span class="text-muted" style="font-size: 0.72rem;">Primary automated biometric door scan</span>
+                  <span class="small fw-bold text-dark d-block">Method 1 — Face Recognition</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">Primary automated bus door verification</span>
                 </div>
               </div>
               <h4 class="fw-bold text-primary mb-0" id="rep-face-count">0</h4>
@@ -1600,7 +1600,7 @@
       }, 300);
     }
 
-    // 2. Initialize Face AI Models
+    // 2. Initialize Face Models
     async function initAI() {
       const badge = document.getElementById('camera-status-badge');
       const statusText = document.getElementById('ai-model-status');
@@ -1610,8 +1610,8 @@
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
         isModelLoaded = true;
-        statusText.innerText = 'SSD MobileNet & 128D Engine Online';
-        badge.innerHTML = '<i class="fa-solid fa-circle-check text-success me-1"></i> AI Neural Models Online';
+        statusText.innerText = 'Biometric Engine Online';
+        badge.innerHTML = '<i class="fa-solid fa-circle-check text-success me-1"></i> Biometric Models Online';
       } catch (err) {
         console.warn('Fallback loading face models...', err);
         try {
@@ -1620,9 +1620,9 @@
           await faceapi.nets.faceLandmark68Net.loadFromUri(FALLBACK);
           await faceapi.nets.faceRecognitionNet.loadFromUri(FALLBACK);
           isModelLoaded = true;
-          statusText.innerText = 'Face AI Models Ready (Fallback)';
+          statusText.innerText = 'Face Verification Ready';
         } catch (fErr) {
-          statusText.innerText = 'AI Models Failed to Load';
+          statusText.innerText = 'Models Failed to Load';
         }
       }
     }
@@ -1720,7 +1720,7 @@
 
       document.getElementById('enrolled-preview-img').src = currentSnapshotBase64;
       document.getElementById('preview-sample-count-badge').innerHTML = '<i class="fa-solid fa-check-circle me-1"></i> 1 Photo (Single Snapshot)';
-      document.getElementById('preview-vector-badge').innerHTML = '<i class="fa-solid fa-brain me-1"></i> 1x 128D AI Embedding';
+      document.getElementById('preview-vector-badge').innerHTML = '<i class="fa-solid fa-camera me-1"></i> 1 Facial Sample Enrolled';
       document.getElementById('preview-mini-gallery').innerHTML = `<img src="${currentSnapshotBase64}" class="burst-dot active" style="width: 38px; height: 38px;">`;
       document.getElementById('preview-box').style.display = 'block';
       showToast('Single snapshot captured! Tip: Use 30-Shot Auto-Capture for highest accuracy.');
@@ -1736,7 +1736,7 @@
       }
 
       if (!isModelLoaded) {
-        alert('Face AI neural models are still initializing. Please wait a moment...');
+        alert('Face verification models are initializing. Please wait a moment...');
         return;
       }
 
@@ -1803,7 +1803,7 @@
             burstInstruction.innerHTML = currentPose.text;
             burstAngleGuide.innerText = currentPose.guide;
 
-            // Extract 128D AI descriptor vector
+            // Extract facial descriptor vector
             const desc = Array.from(detection.descriptor);
             capturedDescriptorsList.push(desc);
 
@@ -1876,7 +1876,7 @@
 
         previewImg.src = currentSnapshotBase64 || capturedImagesList[0];
         countBadge.innerHTML = `<i class="fa-solid fa-check-circle me-1"></i> ${capturedImagesList.length} Photos Captured`;
-        vectorBadge.innerHTML = `<i class="fa-solid fa-brain me-1"></i> ${capturedDescriptorsList.length}x 128D AI Embeddings`;
+        vectorBadge.innerHTML = `<i class="fa-solid fa-camera me-1"></i> ${capturedDescriptorsList.length} Facial Samples Enrolled`;
 
         miniGallery.innerHTML = '';
         capturedImagesList.forEach((b64, idx) => {
@@ -2207,7 +2207,7 @@
 
       // Update Topbar Title Dynamically
       const titleMap = {
-        'enroll-tab': 'Register Student & Face AI',
+        'enroll-tab': 'Register Student & Face Verification',
         'directory-tab': 'Enrolled Student Directory',
         'attendance-tab': 'Daily Data & Transport Register',
         'fleet-tab': 'Live Fleet Satellite GPS Telemetry',
@@ -2499,7 +2499,7 @@
         const studentPhoto = l.photo_path || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=100';
         const doorProofPhoto = l.photo_url || l.photo_path || '';
         const method = l.verification_method || 'FACE';
-        let methodBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-solid fa-camera me-1"></i> FACE AI</span>';
+        let methodBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-solid fa-camera me-1"></i> FACE</span>';
         if (method === 'ID_CARD') {
           methodBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-id-card me-1"></i> ID CARD</span>';
         } else if (method === 'MANUAL') {

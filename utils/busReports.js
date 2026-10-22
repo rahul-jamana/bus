@@ -181,7 +181,7 @@ async function generateMonthlyAttendancePdf(res, { month, busId }) {
   drawMetricCard(doc, 30 + 1 * (kpiW + 5), kpiY, kpiW, kpiH, 'Active Students', uniqueStudents.size, '#0284c7');
   drawMetricCard(doc, 30 + 2 * (kpiW + 5), kpiY, kpiW, kpiH, 'Morning Boardings', boardCount, '#059669');
   drawMetricCard(doc, 30 + 3 * (kpiW + 5), kpiY, kpiW, kpiH, 'Afternoon Exits', exitCount, '#0d9488');
-  drawMetricCard(doc, 30 + 4 * (kpiW + 5), kpiY, kpiW, kpiH, 'AI Face Matches', faceCount, '#2563eb');
+  drawMetricCard(doc, 30 + 4 * (kpiW + 5), kpiY, kpiW, kpiH, 'Face Verifications', faceCount, '#2563eb');
   drawMetricCard(doc, 30 + 5 * (kpiW + 5), kpiY, kpiW, kpiH, 'ID Card / Manual', cardCount + manualCount, '#d97706');
 
   // Policy Alert Pill
@@ -306,7 +306,7 @@ async function generateMonthlyAttendancePdf(res, { month, busId }) {
     doc.save();
     doc.rect(30, pageHeight - 32, contentWidth, 0.5).fill('#cbd5e1');
     doc.fillColor('#64748b').fontSize(7.5).font('Helvetica')
-      .text('SchoolSafe AI Transport Management OS • 30-Day Auto-Purge Policy Compliant • Official Record', 30, pageHeight - 24, { width: contentWidth / 2, align: 'left' })
+      .text('SchoolSafe Transport Management System • 30-Day Auto-Purge Policy Compliant • Official Record', 30, pageHeight - 24, { width: contentWidth / 2, align: 'left' })
       .text(`Page ${i + 1} of ${range.count}`, contentWidth - 100, pageHeight - 24, { width: 130, align: 'right' });
     doc.restore();
   }
@@ -406,7 +406,7 @@ async function generateDailyAttendancePdf(res, { date, busId }) {
   drawMetricCard(doc, 30 + 1 * (kpiW + 5), kpiY, kpiW, kpiH, 'Active Students', uniqueStudents.size, '#0284c7');
   drawMetricCard(doc, 30 + 2 * (kpiW + 5), kpiY, kpiW, kpiH, 'Morning Boardings', boardCount, '#059669');
   drawMetricCard(doc, 30 + 3 * (kpiW + 5), kpiY, kpiW, kpiH, 'Afternoon Exits', exitCount, '#0d9488');
-  drawMetricCard(doc, 30 + 4 * (kpiW + 5), kpiY, kpiW, kpiH, 'Face AI Matches', faceCount, '#2563eb');
+  drawMetricCard(doc, 30 + 4 * (kpiW + 5), kpiY, kpiW, kpiH, 'Face Verifications', faceCount, '#2563eb');
   drawMetricCard(doc, 30 + 5 * (kpiW + 5), kpiY, kpiW, kpiH, 'ID Card / Manual', cardCount + manualCount, '#d97706');
 
   // Policy Alert Pill
@@ -562,7 +562,7 @@ async function generateDailyAttendancePdf(res, { date, busId }) {
     doc.save();
     doc.rect(30, pageHeight - 32, contentWidth, 0.5).fill('#cbd5e1');
     doc.fillColor('#64748b').fontSize(7.5).font('Helvetica')
-      .text('SchoolSafe AI Transport Management OS • Official Daily Transport Register', 30, pageHeight - 24, { width: contentWidth / 2, align: 'left' })
+      .text('SchoolSafe Transport Management System • Official Daily Transport Register', 30, pageHeight - 24, { width: contentWidth / 2, align: 'left' })
       .text(`Page ${i + 1} of ${range.count}`, contentWidth - 100, pageHeight - 24, { width: 130, align: 'right' });
     doc.restore();
   }

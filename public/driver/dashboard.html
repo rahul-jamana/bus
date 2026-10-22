@@ -23,7 +23,7 @@
   <div class="container py-3">
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-primary text-white">
       <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-camera me-2"></i>Bus #4 Door AI Camera (Live Feed)</h5>
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-camera me-2"></i>Bus #4 Door Camera (Live Feed)</h5>
         <!-- Live Bus Door Camera Controls (Webcam Device Selection & Power Switch) -->
         <div class="d-flex align-items-center gap-2">
           <select id="bus-cam-select" class="form-select form-select-sm text-dark bg-white" style="max-width:220px;" onchange="switchBusCamera(this.value)">
@@ -37,7 +37,7 @@
         <video id="bus-video" autoplay playsinline muted class="w-100 h-100" style="object-fit: cover;"></video>
         <canvas id="bus-canvas" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events:none;"></canvas>
         <div class="position-absolute top-0 start-0 m-3 px-3 py-1 bg-success text-white rounded-pill fw-bold small">
-          <i class="fa-solid fa-circle me-1" style="font-size:8px;"></i>AI FACE SCANNER ACTIVE
+          <i class="fa-solid fa-circle me-1" style="font-size:8px;"></i>FACE SCANNER ACTIVE
         </div>
       </div>
       <span class="small opacity-75 text-center d-block">Scans student faces automatically as they step into the bus door</span>
