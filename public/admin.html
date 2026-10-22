@@ -278,7 +278,10 @@
   <!-- ADMIN AUTH MODAL / GATE -->
   <div id="login-modal" class="modal fade show" tabindex="-1" style="display: none; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px);">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content card-custom p-4 border-0">
+      <div class="modal-content card-custom p-4 border-0 position-relative">
+        <!-- Close / Return to Home button -->
+        <a href="/" class="btn-close position-absolute top-0 end-0 m-3" title="Return to Home Page"></a>
+
         <div class="text-center mb-4">
           <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 70px; height: 70px;">
             <i class="fa-solid fa-shield-halved fa-2x"></i>
@@ -312,6 +315,12 @@
           <button type="submit" class="btn btn-primary-blue w-100 py-2 mt-2">
             <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to Transport Console
           </button>
+
+          <div class="text-center mt-3 pt-3 border-top">
+            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+              <i class="fa-solid fa-arrow-left me-1"></i> Exit & Return to Home Page
+            </a>
+          </div>
         </form>
       </div>
     </div>
@@ -1120,19 +1129,33 @@
       setInterval(refreshJourneyFeed, 5000);
     });
 
+    let adminAuthModal = null;
+
     function checkAuth() {
       const token = localStorage.getItem('schoolsafe_token');
       const user = JSON.parse(localStorage.getItem('schoolsafe_user') || '{}');
+      const modalEl = document.getElementById('login-modal');
+
       if (!token || user.role !== 'admin') {
-        const modal = new bootstrap.Modal(document.getElementById('login-modal'));
-        modal.show();
+        if (!adminAuthModal && modalEl) {
+          adminAuthModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+        }
+        modalEl.style.display = 'block';
+        adminAuthModal?.show();
       } else {
+        if (modalEl) {
+          modalEl.style.display = 'none';
+          try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch(e){}
+        }
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
         document.getElementById('admin-user-display').innerText = `Admin: ${user.username || '9040954015'}`;
       }
     }
 
     async function handleAdminLogin(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const u = document.getElementById('login-username').value.trim();
       const p = document.getElementById('login-password').value.trim();
 
@@ -1146,9 +1169,27 @@
         if (data.success) {
           localStorage.setItem('schoolsafe_token', data.token);
           localStorage.setItem('schoolsafe_user', JSON.stringify(data.user));
-          bootstrap.Modal.getInstance(document.getElementById('login-modal'))?.hide();
-          showToast(`Welcome back, ${data.user.name}!`);
+
+          // Hide modal and completely clean up any backdrop
+          const modalEl = document.getElementById('login-modal');
+          if (adminAuthModal) {
+            try { adminAuthModal.hide(); } catch(e){}
+          }
+          if (modalEl) {
+            try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch(e){}
+            modalEl.style.display = 'none';
+            modalEl.classList.remove('show');
+          }
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+
+          showToast(`Welcome back, ${data.user.name || 'Administrator'}!`);
           document.getElementById('admin-user-display').innerText = `Admin: ${data.user.username}`;
+          await loadStats();
+          await loadStudents();
+          await loadBuses();
         } else {
           alert('Login failed: ' + (data.message || 'Invalid credentials'));
         }
@@ -1158,9 +1199,15 @@
     }
 
     function handleLogout() {
+      // Clear credentials
       localStorage.removeItem('schoolsafe_token');
       localStorage.removeItem('schoolsafe_user');
-      window.location.reload();
+      sessionStorage.clear();
+      showToast('Logged out successfully! Returning to home...');
+      // Redirect to home page so admin is not stuck on admin modal
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 300);
     }
 
     // 2. Initialize Face AI Models
