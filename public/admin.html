@@ -60,34 +60,246 @@
       letter-spacing: -0.02em;
     }
 
-    .navbar-custom {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--slate-200);
-      box-shadow: var(--shadow-sm);
+    /* =========================================================================
+       MODERN EXECUTIVE DASHBOARD SIDEBAR & WORKSPACE
+       ========================================================================= */
+    .admin-layout-wrapper {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+      background-color: var(--bg-light);
+    }
+
+    .admin-sidebar {
+      width: 275px;
+      min-width: 275px;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      border-right: 1px solid #1e293b;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sidebar-header {
+      padding: 22px 20px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .sidebar-brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      flex-shrink: 0;
+    }
+
+    .sidebar-brand-sub {
+      color: #64748b;
+      font-size: 0.70rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .sidebar-menu {
+      padding: 16px 14px;
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      padding: 12px 12px 4px;
     }
 
     .nav-pill-custom {
-      border-radius: 9999px;
-      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      border-radius: 12px;
+      padding: 12px 15px;
       font-weight: 600;
       font-size: 0.88rem;
-      color: var(--slate-600);
+      color: #94a3b8;
       background: transparent;
       border: 1px solid transparent;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .nav-pill-custom i {
+      font-size: 1.05rem;
+      width: 22px;
+      text-align: center;
+      color: #64748b;
+      transition: all 0.2s ease;
     }
 
     .nav-pill-custom:hover {
-      color: var(--primary-blue);
-      background-color: var(--primary-light);
+      color: #ffffff;
+      background-color: #1e293b;
+    }
+
+    .nav-pill-custom:hover i {
+      color: #38bdf8;
     }
 
     .nav-pill-custom.active {
-      background-color: var(--primary-blue);
+      background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%) !important;
       color: #ffffff !important;
-      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
+      border-color: #3b82f6;
+    }
+
+    .nav-pill-custom.active i {
+      color: #ffffff !important;
+    }
+
+    .sidebar-badge-pulse {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(5, 150, 105, 0.8);
+      margin-left: auto;
+      animation: pulseGreen 2s infinite;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid #1e293b;
+      background: #0b1120;
+    }
+
+    .sidebar-user-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #334155;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    /* Main Workspace Container */
+    .admin-main-wrapper {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .admin-topbar {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1010;
+    }
+
+    .status-pill-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      font-size: 0.80rem;
+      font-weight: 600;
+      color: var(--slate-600);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+      animation: pulseGreen 2s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+
+    @media (max-width: 991.98px) {
+      .admin-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: -285px;
+        transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .admin-sidebar.show-mobile {
+        left: 0;
+      }
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 1025;
+      }
+      .sidebar-backdrop.active {
+        display: block;
+      }
     }
 
     .card-custom {
@@ -326,50 +538,123 @@
     </div>
   </div>
 
-  <!-- MAIN ADMIN NAVIGATION -->
-  <nav class="navbar navbar-expand-lg navbar-custom sticky-top py-3">
-    <div class="container-fluid px-4">
-      <a class="navbar-brand d-flex align-items-center gap-3 text-decoration-none" href="/admin">
-        <div class="brand-mark" style="width: 40px; height: 40px; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);">
-          <i class="fa-solid fa-shield-halved fa-lg"></i>
-        </div>
-        <div>
-          <span class="fw-bold brand-font fs-5 text-dark lh-1 d-block">SchoolSafe<span class="text-primary">.ai</span> Admin</span>
-          <span class="text-muted small" style="font-size: 0.75rem;">AI Face Boarding & Live Fleet Management</span>
-        </div>
-      </a>
+  <!-- EXECUTIVE WORKSPACE LAYOUT WRAPPER -->
+  <div class="admin-layout-wrapper">
 
-      <div class="d-none d-lg-flex gap-2 mx-auto">
-        <button class="nav-pill-custom active" onclick="switchTab('enroll-tab')"><i class="fa-solid fa-user-plus me-1"></i> Register Student & Face</button>
-        <button class="nav-pill-custom" onclick="switchTab('directory-tab')"><i class="fa-solid fa-address-book me-1"></i> Student Directory</button>
-        <button class="nav-pill-custom" onclick="switchTab('attendance-tab')"><i class="fa-solid fa-clipboard-check me-1"></i> Transport Attendance & Cards</button>
-        <button class="nav-pill-custom" onclick="switchTab('fleet-tab')"><i class="fa-solid fa-map-location-dot me-1"></i> Live Fleet GPS</button>
-        <button class="nav-pill-custom" onclick="switchTab('journey-tab')"><i class="fa-solid fa-route me-1"></i> Journey & Simulation</button>
-        <button class="nav-pill-custom" onclick="switchTab('logs-tab')"><i class="fa-solid fa-bell me-1"></i> In/Out Notifications</button>
+    <!-- MODERN EXECUTIVE DASHBOARD SIDEBAR -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <!-- SIDEBAR BRAND HEADER -->
+      <div class="sidebar-header">
+        <a href="/admin" class="sidebar-brand">
+          <div class="sidebar-brand-icon">
+            <i class="fa-solid fa-shield-halved fa-lg"></i>
+          </div>
+          <div>
+            <div class="fw-bold brand-font fs-5 text-white lh-1">SchoolSafe<span style="color: #38bdf8;">.ai</span></div>
+            <span class="sidebar-brand-sub">Admin Transport OS</span>
+          </div>
+        </a>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
-        <div class="dropdown">
-          <button class="btn btn-outline-primary btn-sm dropdown-toggle rounded-pill px-3" type="button" data-bs-toggle="dropdown">
-            <i class="fa-solid fa-external-link me-1"></i> Portals
+      <!-- SIDEBAR NAVIGATION MENU -->
+      <div class="sidebar-menu">
+        <div class="sidebar-section-label">STUDENTS & ATTENDANCE</div>
+        <button class="nav-pill-custom active" onclick="switchTab('enroll-tab')">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Register Student & Face</span>
+        </button>
+        <button class="nav-pill-custom" onclick="switchTab('directory-tab')">
+          <i class="fa-solid fa-address-book"></i>
+          <span>Student Directory</span>
+        </button>
+        <button class="nav-pill-custom" onclick="switchTab('attendance-tab')">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>Attendance & Cards</span>
+        </button>
+
+        <div class="sidebar-section-label mt-3">FLEET & TRACKING</div>
+        <button class="nav-pill-custom" onclick="switchTab('fleet-tab')">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>Live Fleet GPS</span>
+          <span class="sidebar-badge-pulse"></span>
+        </button>
+        <button class="nav-pill-custom" onclick="switchTab('journey-tab')">
+          <i class="fa-solid fa-route"></i>
+          <span>Journey & Simulation</span>
+        </button>
+        <button class="nav-pill-custom" onclick="switchTab('logs-tab')">
+          <i class="fa-solid fa-bell"></i>
+          <span>In/Out Alerts Log</span>
+        </button>
+      </div>
+
+      <!-- SIDEBAR FOOTER (PORTALS LAUNCHER & ADMIN PROFILE) -->
+      <div class="sidebar-footer">
+        <!-- Quick Portals Launcher Dropup -->
+        <div class="dropup mb-2">
+          <button class="btn btn-sm w-100 rounded-3 d-flex align-items-center justify-content-between px-3 py-2 text-white" data-bs-toggle="dropdown" style="border: 1px solid #334155; background: #1e293b;">
+            <span class="d-flex align-items-center gap-2 small fw-bold">
+              <i class="fa-solid fa-external-link" style="color: #38bdf8;"></i> Switch Portals
+            </span>
+            <i class="fa-solid fa-chevron-up small text-muted"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-            <li><a class="dropdown-item py-2" href="/driver" target="_blank"><i class="fa-solid fa-mobile-screen me-2 text-primary"></i>Driver GPS Phone Console</a></li>
-            <li><a class="dropdown-item py-2" href="/bus-terminal" target="_blank"><i class="fa-solid fa-camera me-2 text-success"></i>Bus Door AI Face Scanner</a></li>
-            <li><a class="dropdown-item py-2" href="/parent" target="_blank"><i class="fa-solid fa-heart me-2 text-danger"></i>Parent Live Tracking Portal</a></li>
+          <ul class="dropdown-menu dropdown-menu-dark shadow-lg border-secondary mb-2 rounded-3 w-100 p-2">
+            <li><a class="dropdown-item py-2 rounded-2" href="/bus-terminal" target="_blank"><i class="fa-solid fa-camera me-2 text-success"></i>Bus Door AI Terminal</a></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/parent" target="_blank"><i class="fa-solid fa-heart me-2 text-danger"></i>Parent Live Tracker</a></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/driver" target="_blank"><i class="fa-solid fa-mobile-screen me-2 text-info"></i>Driver GPS Cockpit</a></li>
+            <li><hr class="dropdown-divider border-secondary my-1"></li>
+            <li><a class="dropdown-item py-2 rounded-2" href="/" target="_blank"><i class="fa-solid fa-house me-2 text-warning"></i>SchoolSafe Home Hub</a></li>
           </ul>
         </div>
-        <div class="d-flex align-items-center bg-light px-3 py-1 rounded-pill border">
-          <i class="fa-solid fa-user-shield text-primary me-2"></i>
-          <span class="small fw-bold" id="admin-user-display">Admin 9040954015</span>
-        </div>
-        <button onclick="handleLogout()" class="btn btn-sm btn-outline-danger rounded-pill" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
-      </div>
-    </div>
-  </nav>
 
-  <!-- BODY CONTENT -->
-  <div class="container-fluid px-4 py-4">
+        <!-- Admin Profile & Logout -->
+        <div class="sidebar-user-card">
+          <div class="d-flex align-items-center gap-2 overflow-hidden">
+            <div class="sidebar-user-avatar">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div class="text-white small fw-bold text-truncate" id="admin-user-display">Admin 9040954015</div>
+              <div class="text-white-50" style="font-size: 0.68rem;">Transport Controller</div>
+            </div>
+          </div>
+          <button onclick="handleLogout()" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleMobileSidebar()"></div>
+
+    <!-- MAIN DASHBOARD WORKSPACE -->
+    <div class="admin-main-wrapper">
+      <!-- STICKY TOPBAR HEADER -->
+      <header class="admin-topbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-outline-secondary btn-sm d-lg-none rounded-3" onclick="toggleMobileSidebar()" title="Toggle Menu">
+            <i class="fa-solid fa-bars fa-lg"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold brand-font text-dark mb-0" id="topbar-page-title">Register Student & Face AI</h5>
+            <span class="text-muted small" style="font-size: 0.75rem;">School Bus Fleet Management Console</span>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <div class="status-pill-pulse d-none d-sm-inline-flex">
+            <span class="pulse-dot"></span>
+            <span>System Live • 3 Active Fleet Buses</span>
+          </div>
+          <a href="/bus-terminal" target="_blank" class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3">
+            <i class="fa-solid fa-camera me-1"></i> Open Bus Terminal
+          </a>
+        </div>
+      </header>
+
+      <!-- BODY CONTENT -->
+      <div class="container-fluid px-4 py-4">
 
     <!-- ACTIVE SOS EMERGENCY BANNER (Shows when bus driver triggers panic) -->
     <div id="sos-alert-banner" class="alert alert-danger shadow border-danger border-2 p-3 rounded-4 mb-4" style="display: none;">
@@ -1005,7 +1290,9 @@
       </div>
     </div>
 
-  </div>
+      </div> <!-- .container-fluid -->
+    </div> <!-- .admin-main-wrapper -->
+  </div> <!-- .admin-layout-wrapper -->
 
   <!-- ========================================================================= -->
   <!-- PRINTABLE STUDENT ID CARD MODAL WITH HIGH-SECURITY QR & BARCODE -->
@@ -1815,6 +2102,20 @@
       const btn = Array.from(document.querySelectorAll('.nav-pill-custom')).find(b => b.getAttribute('onclick')?.includes(tabId));
       if (btn) btn.classList.add('active');
 
+      // Update Topbar Title Dynamically
+      const titleMap = {
+        'enroll-tab': 'Register Student & Face AI',
+        'directory-tab': 'Enrolled Student Directory',
+        'attendance-tab': 'Transport Attendance & Cards',
+        'fleet-tab': 'Live Fleet Satellite GPS Telemetry',
+        'journey-tab': 'Student Custody & Journey Simulation',
+        'logs-tab': 'In/Out Alerts & Notification Log'
+      };
+      const titleEl = document.getElementById('topbar-page-title');
+      if (titleEl && titleMap[tabId]) titleEl.innerText = titleMap[tabId];
+
+      closeMobileSidebar();
+
       if (tabId === 'fleet-tab') {
         setTimeout(() => {
           if (leafletMap) leafletMap.invalidateSize();
@@ -1822,6 +2123,20 @@
       } else if (tabId === 'attendance-tab') {
         loadAttendanceReport();
       }
+    }
+
+    function toggleMobileSidebar() {
+      const sb = document.getElementById('admin-sidebar');
+      const bd = document.getElementById('sidebar-backdrop');
+      if (sb) sb.classList.toggle('show-mobile');
+      if (bd) bd.classList.toggle('active');
+    }
+
+    function closeMobileSidebar() {
+      const sb = document.getElementById('admin-sidebar');
+      const bd = document.getElementById('sidebar-backdrop');
+      if (sb) sb.classList.remove('show-mobile');
+      if (bd) bd.classList.remove('active');
     }
 
     // =========================================================================
