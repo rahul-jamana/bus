@@ -105,17 +105,53 @@ flowchart TD
   { "bus_id": 1, "lat": 20.2961, "lng": 85.8245, "speed": 38, "heading": 120, "status": "ACTIVE" }
   ```
 - **`GET /api/bus/telemetry/:bus_id`**: Returns current coordinates, speed, route stops, and onboard passenger count.
-- **`GET /api/bus/telemetry`**: Returns live telemetry for all buses in the fleet.
-- **`GET /api/bus/parent-track/:query`**: Queries student by roll number (`BEC26081`) or parent phone number, returning live bus position, assigned route stops, today's boarding photo, and SMS dispatches.
+- **`GET /api/bus/parent-track/:query`**: Queries student by roll number (`ROHAN-04`, `BEC26081`) or parent phone, returning live bus position, 4-stage custody journey, today's boarding photo proof, guardian OTP, and SMS dispatches.
+- **`POST /api/bus/board`**: Verifies boarding with wrong-bus detection, photo proof snapshot, and staff override support.
+- **`POST /api/bus/arrive-stop`**: Logs arrival at stop and broadcasts SMS alerts to waiting guardians.
+- **`POST /api/bus/verify-exit`**: Verifies student safely stepped off bus at stop.
+- **`POST /api/bus/verify-handover`**: Completes custody handover upon 4-digit OTP matching (`7421`).
+- **`POST /api/bus/trips/start` & `POST /api/bus/trips/end`**: Trip lifecycle requiring end-of-trip sleeping-child physical walkthrough inspection.
+- **`POST /api/bus/sos`, `GET /api/bus/sos/active`, `POST /api/bus/sos/resolve`**: Emergency panic broadcast system.
 
-### 👤 Face Biometrics & Attendance
-- **`POST /api/face/enroll`**: Registers student profile with 128D facial embeddings and reference photos.
-- **`GET /api/face/descriptors`**: Returns pre-compiled descriptors of all enrolled students for client-side matching.
-- **`POST /api/bus/board`**: Logs student entry into the bus, captures snapshot, and dispatches parent boarding SMS.
-- **`POST /api/bus/deboard`**: Logs student exit at school/home stop and sends safe arrival alert.
+---
 
-### 🔐 Authentication
-- **`POST /api/auth/login`**: Authenticates admin using username and password (`9040954015`).
+## 🧪 Master Test Subject & Demo Flow
+
+We have seeded a master test subject for instant live demonstration:
+
+| Parameter | Master Test Subject Value |
+| :--- | :--- |
+| **Student Name** | **Rohan Verma** |
+| **Roll Number** | **`ROHAN-04`** |
+| **Student ID** | **`STU-ROHAN`** |
+| **Class & Section** | Class V - Section A |
+| **Assigned Bus** | **Bus #4 — Khordha Route** |
+| **Pickup / Drop Stop** | **Pitapalli Square** |
+| **Guardian** | **Manoj Verma** (`+91 9876543210`) |
+| **Guardian Pickup OTP** | **`7421`** |
+
+### 5-Minute Complete Verification Flow:
+1. **Admin Portal (`/admin`)**:
+   - Log in with credentials `9040954015` / `9040954015`.
+   - Click on the **"Journey & Simulation"** tab.
+   - Click **"1. Simulate Boarding (Bus #4 - Normal)"** — notice green confirmation, photo proof generated, and live progress bar advances to 35%.
+2. **Parent Portal (`/parent`)**:
+   - Open `/parent` in a separate browser tab.
+   - Roll `ROHAN-04` is automatically tracked.
+   - See today's **Guardian Pickup Code (OTP: `7421`)**, door camera verification snapshot photo, and live moving bus on the map.
+3. **Wrong Bus Detection Test**:
+   - In Admin Journey tab, click **"1-B. Simulate Wrong Bus Boarding (Bus #2)"**.
+   - Notice immediate Wrong Bus Warning popup requiring staff override authorization!
+4. **Driver Console (`/driver`)**:
+   - Click **"Start Trip"** $\rightarrow$ Click **"Sim Drive"** to start simulated GPS road telemetry.
+   - Check the student roster showing Rohan Verma as **Boarded**.
+   - Click **"End Trip (Check)"** $\rightarrow$ The **Mandatory Sleeping Child Walkthrough Inspection** modal appears.
+   - Confirm all 3 physical checks (walked aisle, inspected under seats, confirmed zero kids) to close the trip.
+5. **Drop-Off & Guardian Handover (`/bus-terminal`)**:
+   - Switch mode to **"Drop-Off Exit"**.
+   - Click **"1. Bus Arrived at Stop"** $\rightarrow$ Stop arrival alert sent.
+   - Click **"2. Verify Student Exited Bus"** $\rightarrow$ Safe step-off logged.
+   - Enter OTP **`7421`** and click **"Verify OTP"** $\rightarrow$ Custody chain completed!
 
 ---
 
@@ -142,11 +178,11 @@ npm start
 ```
 
 ### 4. Open in Browser
-- **Admin Portal**: [http://localhost:3000/admin](http://localhost:3000/admin)
-- **Driver GPS**: [http://localhost:3000/driver](http://localhost:3000/driver)
+- **Main Launchpad**: [http://localhost:3000/](http://localhost:3000/)
+- **Admin Portal**: [http://localhost:3000/admin](http://localhost:3000/admin) *(ID/Pass: `9040954015`)*
+- **Driver GPS Console**: [http://localhost:3000/driver](http://localhost:3000/driver)
+- **Bus Door AI Camera**: [http://localhost:3000/bus-terminal.html](http://localhost:3000/bus-terminal.html)
 - **Parent Portal**: [http://localhost:3000/parent](http://localhost:3000/parent)
-
-*(To test on a smartphone connected to the same Wi-Fi, open `http://<YOUR_LOCAL_IP>:3000`)*
 
 ---
 
@@ -159,21 +195,21 @@ bus/
 ├── .firebaserc             # Firebase target project (buss-b1d0f)
 ├── .gitignore              # Ignores node_modules, logs, and database files
 ├── db/
-│   ├── database.js         # SQLite schema initialization & master admin seed
-│   └── attendance.db       # Embedded database (Students, Buses, Logs)
+│   ├── database.js         # SQLite schema initialization, migrations & seeds
+│   └── attendance.db       # Embedded database (Students, Buses, Logs, SOS, Trips)
 ├── routes/
-│   ├── bus.js              # Live GPS telemetry & parent tracking routes
-│   ├── face.js             # 128D AI face recognition & enrollment routes
-│   ├── students.js         # Student & parent contact management routes
+│   ├── bus.js              # Live GPS telemetry, custody journey & parent tracking
+│   ├── face.js             # 128D AI face recognition & biometric enrollment
+│   ├── students.js         # Student & parent contact management
 │   ├── notifications.js    # SMS / WhatsApp in/out alert dispatcher
-│   └── auth.js             # Admin authentication routes
+│   └── auth.js             # Admin authentication routes (9040954015)
 ├── uploads/                # Captured live student boarding photos
 └── public/                 # Clean Modern Blue & White Interfaces
     ├── index.html          # Main Launchpad
-    ├── admin.html          # 🖥️ Transport Admin Portal
-    ├── driver.html         # 📱 Driver Mobile GPS Transmitter
-    ├── bus-terminal.html   # 📷 Bus Door AI Camera Scanner
-    └── parent.html         # 👨‍👩‍👧 Parent Live Map & Child Photo Card
+    ├── admin.html          # 🖥️ Transport Admin Portal & Journey Simulation
+    ├── driver.html         # 📱 Driver Mobile GPS Transmitter & Trip Walkthrough
+    ├── bus-terminal.html   # 📷 Bus Door AI Camera Scanner & OTP Handover
+    └── parent.html         # 👨‍👩‍👧 Parent Live Map, OTP Card & Photo Proof
 ```
 
 ---
