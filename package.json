@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "deploy": "npx -y firebase-tools@latest deploy --project face-b4486"
+    "deploy": "firebase deploy --only hosting --project becrobot-9427c"
   },
   "keywords": [
     "face-detection",
